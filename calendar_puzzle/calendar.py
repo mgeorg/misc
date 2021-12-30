@@ -422,36 +422,56 @@ class Board(object):
     b.target = self.target
     return b
 
-  def FloodFill(self, group_id, row, col, visited):
-    if self.uncovered[row*7+col] and visited[row*7+col] == -1:
+  def FloodFill(self, group_id, row, col, visited, num_neighbors):
+    if visited[row*7+col] == -1:
+      neighbor_count = 0
       count = 1
       visited[row*7+col] = group_id
-      if row-1 >= 0:
-        count += self.FloodFill(group_id, row-1, col, visited)
-      if row+1 < 7:
-        count += self.FloodFill(group_id, row+1, col, visited)
-      if col-1 >= 0:
-        count += self.FloodFill(group_id, row, col-1, visited)
-      if col+1 < 7:
-        count += self.FloodFill(group_id, row, col+1, visited)
+      if row-1 >= 0 and self.uncovered[(row-1)*7+col]:
+        neighbor_count += 1
+        count += self.FloodFill(group_id, row-1, col, visited, num_neighbors)
+      if row+1 < 7 and self.uncovered[(row+1)*7+col]:
+        neighbor_count += 1
+        count += self.FloodFill(group_id, row+1, col, visited, num_neighbors)
+      if col-1 >= 0 and self.uncovered[row*7+col-1]:
+        neighbor_count += 1
+        count += self.FloodFill(group_id, row, col-1, visited, num_neighbors)
+      if col+1 < 7 and self.uncovered[row*7+col+1]:
+        neighbor_count += 1
+        count += self.FloodFill(group_id, row, col+1, visited, num_neighbors)
+      num_neighbors[row*7+col] = neighbor_count
       return count
     else:
       return 0
 
+  def AddPossible(self, possible, piece_index, orientation, row, col):
+    cover = pieces[piece_index][orientation]
+    for i in range(len(cover)):
+      for j in range(len(cover[0])):
+        if cover[i][j]:
+          index = (row+i)*7+col+j
+          if possible[index] is None:
+            possible[index] = list()
+          possible[index].append((piece_index, orientation, row, col))
+
   def IsImpossible(self):
     # Flood fill.
     visited = [-1]*len(self.uncovered)
+    num_neighbors = [-1]*len(self.uncovered)
     group_id = 0
     size_of_group = list()
     for row in range(7):
       for col in range(7):
-        count = self.FloodFill(group_id, row, col, visited)
-        if count > 0:
-          size_of_group.append(count)
-          group_id += 1
+        if self.uncovered[row*7+col]:
+          count = self.FloodFill(group_id, row, col, visited, num_neighbors)
+          if count > 0:
+            size_of_group.append(count)
+            group_id += 1
     # print(visited)
     # print(size_of_group)
+    # print(num_neighbors)
     # print(str(self))
+
     # Check groups are of the right size.
     have_six = self.used[0] is None
     for count in size_of_group:
@@ -459,43 +479,106 @@ class Board(object):
         continue
       if have_six and count % 5 == 1:
         continue
-      return True
-    # Check every single position.
+      return (True, None)
+
+    order = list()
     for row in range(7):
       for col in range(7):
         if self.uncovered[row*7+col]:
-          # print((row, col))
-          # Find something that covers this block.
-          found = False
-          for piece_index in range(len(pieces)):
-            if self.used[piece_index] is not None:
-              continue
-            # print((piece_index, row, col))
-            for orientation in range(len(pieces[piece_index])):
-              # print((piece_index, orientation, row, col))
-              cover = pieces[piece_index][orientation]
-              for i in range(len(cover)):
-                for j in range(len(cover[0])):
-                  if cover[i][j]:
-                    new_row = row-i
-                    new_col = col-j
-                    if new_row >= 0 and new_col >= 0:
-                      b = self.Place(piece_index, orientation, new_row, new_col)
-                      if b is not None:
-                        # print('FOUND' + str((piece_index, orientation, row, col)))
-                        # print(cover)
-                        # print(str(b))
-                        found = True
-                        break
-                if found:
-                  break
-              if found:
-                break
+          # print(row*7+col)
+          order.append(
+              (num_neighbors[row*7+col],
+               size_of_group[visited[row*7+col]],
+               row, col))
+    order.sort()
+    # print(order)
+
+    possible = [None]*len(self.uncovered)
+    for unused_num_neighbors, unused_group_size, row, col in order:
+      if possible[row*7+col] is not None:
+        continue
+      # print((row, col))
+      # Find something that covers this block.
+      found = False
+      for piece_index in range(len(pieces)):
+        if self.used[piece_index] is not None:
+          continue
+        # print((piece_index, row, col))
+        for orientation in range(len(pieces[piece_index])):
+          # print((piece_index, orientation, row, col))
+          cover = pieces[piece_index][orientation]
+          for i in range(len(cover)):
+            for j in range(len(cover[0])):
+              if cover[i][j]:
+                new_row = row-i
+                new_col = col-j
+                if new_row >= 0 and new_col >= 0:
+                  b = self.Place(piece_index, orientation, new_row, new_col)
+                  if b is not None:
+                    # print('FOUND' + str((piece_index, orientation, row, col)))
+                    # print(cover)
+                    # print(str(b))
+                    self.AddPossible(possible, piece_index, orientation,
+                                     new_row, new_col)
+                    found = True
+                    break
             if found:
               break
-          if not found:
-            return True
-    return False
+          if found:
+            break
+        if found:
+          break
+      if not found:
+        return (True, None)
+
+    # print('Found one for everything.')
+    # print(possible)
+    # Check for more than one.
+    for unused_num_neighbors, unused_group_size, row, col in order:
+      if len(possible[row*7+col]) >= 2:
+        continue
+      # print(f'Need something more for ({row}, {col}).')
+      # Find something (else) that covers this block.
+      found = False
+      for piece_index in range(len(pieces)-1, -1, -1):
+        if self.used[piece_index] is not None:
+          continue
+        # print((piece_index, row, col))
+        for orientation in range(len(pieces[piece_index])-1, -1, -1):
+          # print((piece_index, orientation, row, col))
+          cover = pieces[piece_index][orientation]
+          for i in range(len(cover)):
+            for j in range(len(cover[0])):
+              if cover[i][j]:
+                new_row = row-i
+                new_col = col-j
+                if new_row >= 0 and new_col >= 0:
+                  if ((piece_index, orientation, new_row, new_col) in
+                      possible[row*7+col]):
+                    # print('failed')
+                    found = True
+                    # Got to where we searched last time.
+                    break
+                  b = self.Place(piece_index, orientation, new_row, new_col)
+                  if b is not None:
+                    # print('FOUND' + str((piece_index, orientation, row, col)))
+                    # print(cover)
+                    # print(str(b))
+                    self.AddPossible(possible, piece_index, orientation,
+                                     new_row, new_col)
+                    found = True
+                    break
+            if found:
+              break
+          if found:
+            break
+        if found:
+          break
+      if len(possible[row*7+col]) < 2:
+        # Only one thing is possible.
+        # print('ONLY possible cover is ' + str(possible[row*7+col][0]))
+        return (False, possible[row*7+col][0])
+    return (False, None)
               
     
   def Place(self, piece_index, orientation, row, col):
@@ -833,59 +916,63 @@ class Board(object):
 # print(pieces)
 orig = BoardForDate(month, day)
 
-# a = orig.Place(0,1,0,1)
-# print(str(a))
-# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
+a = orig.Place(0,1,0,1)
+print(str(a))
+print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
 
-# a = a.Place(2,0,1,0)
-# print(str(a))
-# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
-# a = a.Place(3,0,2,4)
-# print(str(a))
-# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
+a = a.Place(2,0,1,0)
+print(str(a))
+print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
+a = a.Place(3,0,2,4)
+print(str(a))
+print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
 
 # assert False, 'Breakpoint'
 
-solved = list()
-# print(str(orig))
-for b in orig.All(6):
-  if b.IsImpossible():
-    if print_impossible:
-      print()
-      print('IMPOSSIBLE')
-      print(str(b))
-    continue
-  for b2 in b.All(7):
-    if b2.IsImpossible():
-      if print_impossible:
+def FindSolutions(b, pieces_left):
+  global solved
+  if len(pieces_left) == 0:
+    print('SOLUTION' + str(len(solved)))
+    print(b.used)
+    print(str(b))
+    solved.append(b)
+    if not solve_for_all:
+      sys.exit(0)
+    return True
+  piece_index = pieces_left[0]
+  new_left = pieces_left[1:]
+  found_solution = False
+  for new_board in b.All(piece_index):
+    impossible, only_move = new_board.IsImpossible()
+    if impossible:
+      if print_impossible and len(pieces_left) >= 6:
         print()
         print('IMPOSSIBLE')
-        print(str(b2))
+        print(str(new_board))
       continue
-    # print(str(b2))
-    for b3 in b2.All(2):
-      if b3.IsImpossible():
+    if only_move is not None:
+      while only_move is not None:
+        new_board = new_board.Place(
+            only_move[0], only_move[1], only_move[2], only_move[3])
+        impossible, only_move = new_board.IsImpossible()
+        if impossible:
+          break
+      if impossible:
         continue
-      # print(str(b3))
-      for b4 in b3.All(5):
-        if b4.IsImpossible():
-          continue
-        for b5 in b4.All(4):
-          if b5.IsImpossible():
-            continue
-          for b6 in b5.All(3):
-            if b6.IsImpossible():
-              continue
-            for b7 in b6.All(0):
-              if b7.IsImpossible():
-                continue
-              for b8 in b7.All(1):
-                solved.append(b8)
-                print('SOLUTION' + str(len(solved)))
-                print(b8.used)
-                print(str(b8))
-                if not solve_for_all:
-                  sys.exit(0)
+      only_move_pieces = list()
+      for p in new_left:
+        if new_board.used[p] is None:
+          only_move_pieces.append(p)
+      if FindSolutions(new_board, only_move_pieces):
+        found_solution = True
+    else:
+      if FindSolutions(new_board, new_left):
+        found_solution = True
+  return found_solution
+
+
+solved = list()
+FindSolutions(orig, [6, 7, 2, 5, 4, 3, 0, 1])
 
 total = len(solved)
 
