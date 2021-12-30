@@ -5,8 +5,11 @@ import datetime
 
 solve_for_all = True
 print_impossible = False
+
 use_cross = None
+use_line = None
 normal_rectangle = True
+
 use_current_day = True
 month = 'Feb'
 day = 29
@@ -359,6 +362,29 @@ if not normal_rectangle:
     'xxx\n'
     'xx.\n',
   ]
+
+if use_line is not None:
+  if use_line == 0:
+    pieces[use_line] = [
+      'xxxxxx\n',
+
+      'x\n'
+      'x\n'
+      'x\n'
+      'x\n'
+      'x\n'
+      'x\n',
+    ]
+  else:
+    pieces[use_line] = [
+      'xxxxx\n',
+
+      'x\n'
+      'x\n'
+      'x\n'
+      'x\n'
+      'x\n',
+    ]
 
 unicode_to_ascii_art = {
   '─': '-',
