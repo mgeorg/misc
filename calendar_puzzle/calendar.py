@@ -422,7 +422,45 @@ class Board(object):
     b.target = self.target
     return b
 
+  def FloodFill(self, group_id, row, col, visited):
+    if self.uncovered[row*7+col] and visited[row*7+col] == -1:
+      count = 1
+      visited[row*7+col] = group_id
+      if row-1 >= 0:
+        count += self.FloodFill(group_id, row-1, col, visited)
+      if row+1 < 7:
+        count += self.FloodFill(group_id, row+1, col, visited)
+      if col-1 >= 0:
+        count += self.FloodFill(group_id, row, col-1, visited)
+      if col+1 < 7:
+        count += self.FloodFill(group_id, row, col+1, visited)
+      return count
+    else:
+      return 0
+
   def IsImpossible(self):
+    # Flood fill.
+    visited = [-1]*len(self.uncovered)
+    group_id = 0
+    size_of_group = list()
+    for row in range(7):
+      for col in range(7):
+        count = self.FloodFill(group_id, row, col, visited)
+        if count > 0:
+          size_of_group.append(count)
+          group_id += 1
+    # print(visited)
+    # print(size_of_group)
+    # print(str(self))
+    # Check groups are of the right size.
+    have_six = self.used[0] is None
+    for count in size_of_group:
+      if count % 5 == 0:
+        continue
+      if have_six and count % 5 == 1:
+        continue
+      return True
+    # Check every single position.
     for row in range(7):
       for col in range(7):
         if self.uncovered[row*7+col]:
@@ -795,12 +833,18 @@ class Board(object):
 # print(pieces)
 orig = BoardForDate(month, day)
 
-# a = orig.Place(0,1,4,1)
+# a = orig.Place(0,1,0,1)
 # print(str(a))
-# print(a.IsImpossible())
+# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
 
-# a = a.Place(2,0,6,0)
+# a = a.Place(2,0,1,0)
 # print(str(a))
+# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
+# a = a.Place(3,0,2,4)
+# print(str(a))
+# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
+
+# assert False, 'Breakpoint'
 
 solved = list()
 # print(str(orig))
