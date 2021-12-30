@@ -2,6 +2,11 @@
 
 import sys
 
+solve_for_all = True
+print_impossible = False
+use_cross = None
+normal_rectangle = True
+
 empty_board = [True] * (7*7)
 empty_board[0*7+6] = False
 empty_board[1*7+6] = False
@@ -305,6 +310,41 @@ pieces = [
   ],
 ]
 
+if use_cross is not None:
+  pieces[use_cross] = [
+    '.x.\n'
+    'xxx\n'
+    '.x.\n',
+  ]
+
+if not normal_rectangle:
+  pieces[0] = [
+    'xx.\n'
+    'xxx\n'
+    '.x.\n',
+
+    '.xx\n'
+    'xxx\n'
+    '.x.\n',
+
+    '.x.\n'
+    'xxx\n'
+    '.xx\n',
+
+    '.x.\n'
+    'xxx\n'
+    'xx.\n',
+  ]
+
+unicode_to_ascii_art = {
+  '─': '-',
+  '│': '|',
+  '┐': '\\',
+  '└': '\\',
+  '┘': '/',
+  '┌': '/',
+}
+
 for p in pieces:
   for i in range(len(p)):
     p[i] = [[char == 'x' for char in line.strip()] for line in p[i].strip().splitlines()]
@@ -450,31 +490,31 @@ class Board(object):
             if (i+1 < len(cover) and j+1 < len(cover[0]) and
                 cover[i+1][j+1] and cover[i+1][j+1]):
               downright = True
-            pic = [' ----- ', ' |', index_to_name[(row+i)*7+col+j],
-                   '| ', ' ----- ']
+            pic = [' ───── ', ' │', index_to_name[(row+i)*7+col+j],
+                   '│ ', ' ───── ']
             if up:
               pic[0] = ''
               if left:
                 if upleft:
                   pic[0] += '  '
                 else:
-                  pic[0] += '-/'
+                  pic[0] += '-┘'
               else:
-                pic[0] += ' |'
+                pic[0] += ' │'
               pic[0] += '   '
               if right:
                 if upright:
                   pic[0] += '  '
                 else:
-                  pic[0] += '\\-'
+                  pic[0] += '└-'
               else:
-                pic[0] += '| '
+                pic[0] += '│ '
             else:
               pic[0] = ''
               if left:
                 pic[0] += '--'
               else:
-                pic[0] += ' /'
+                pic[0] += ' ┌'
               pic[0] += '---'
               if right:
                 pic[0] += '--'
@@ -488,26 +528,26 @@ class Board(object):
                 else:
                   pic[4] += '-\\'
               else:
-                pic[4] += ' |'
+                pic[4] += ' │'
               pic[4] += '   '
               if right:
                 if downright:
                   pic[4] += '  '
                 else:
-                  pic[4] += '/-'
+                  pic[4] += '┌-'
               else:
-                pic[4] += '| '
+                pic[4] += '│ '
             else:
               pic[4] = ''
               if left:
                 pic[4] += '--'
               else:
-                pic[4] += ' \\'
+                pic[4] += ' └'
               pic[4] += '---'
               if right:
                 pic[4] += '--'
               else:
-                pic[4] += '/ '
+                pic[4] += '┘ '
             if left:
               pic[1] = '  '
             if right:
@@ -532,14 +572,22 @@ class Board(object):
     return '\n'.join(output)
 
   def PrettyStrLarge(self):
+    solved = False
+    if sum([x is not None for x in self.used]) == len(self.used):
+      solved = True
     grid = list()
     for i in range(len(empty_board)):
       grid.append(['           ', '  ', '  ' + index_to_name[i] + '  ',
                    '  ', '           '])
-    # grid[self.target[0]] = (
-        # [' ***** ', ' *', index_to_name[self.target[0]], '* ', ' ***** '])
-    # grid[self.target[1]] = (
-        # [' ***** ', ' *', index_to_name[self.target[1]], '* ', ' ***** '])
+    if not solved:
+      i = self.target[0]
+      grid[i] = ['           ', '   ┌───┐   ', '  ',
+                 ' │' + index_to_name[i] + '│ ',
+                 '  ','   └───┘   ', '           ']
+      i = self.target[1]
+      grid[i] = ['           ', '   ┌───┐   ', '  ',
+                 ' │' + index_to_name[i] + '│ ',
+                 '  ','   └───┘   ', '           ']
     for piece_index, elem in enumerate(self.used):
       if elem is None:
         continue
@@ -577,64 +625,64 @@ class Board(object):
             if (i+1 < len(cover) and j+1 < len(cover[0]) and
                 cover[i+1][j+1] and cover[i+1][j+1]):
               downright = True
-            pic = [' --------- ', ' |', '  '+ index_to_name[(row+i)*7+col+j] + '  ',
-                   '| ', ' --------- ']
+            pic = [' ───────── ', ' │', '  '+ index_to_name[(row+i)*7+col+j] + '  ',
+                   '│ ', ' ───────── ']
             if up:
               pic[0] = ''
               if left:
                 if upleft:
                   pic[0] += '  '
                 else:
-                  pic[0] += '-/'
+                  pic[0] += '─┘'
               else:
-                pic[0] += ' |'
+                pic[0] += ' │'
               pic[0] += '       '
               if right:
                 if upright:
                   pic[0] += '  '
                 else:
-                  pic[0] += '\\-'
+                  pic[0] += '└─'
               else:
-                pic[0] += '| '
+                pic[0] += '│ '
             else:
               pic[0] = ''
               if left:
-                pic[0] += '--'
+                pic[0] += '──'
               else:
-                pic[0] += ' /'
-              pic[0] += '-------'
+                pic[0] += ' ┌'
+              pic[0] += '───────'
               if right:
-                pic[0] += '--'
+                pic[0] += '──'
               else:
-                pic[0] += '\\ '
+                pic[0] += '┐ '
             if down:
               pic[4] = ''
               if left:
                 if downleft:
                   pic[4] += '  '
                 else:
-                  pic[4] += '-\\'
+                  pic[4] += '─┐'
               else:
-                pic[4] += ' |'
+                pic[4] += ' │'
               pic[4] += '       '
               if right:
                 if downright:
                   pic[4] += '  '
                 else:
-                  pic[4] += '/-'
+                  pic[4] += '┌─'
               else:
-                pic[4] += '| '
+                pic[4] += '│ '
             else:
               pic[4] = ''
               if left:
-                pic[4] += '--'
+                pic[4] += '──'
               else:
-                pic[4] += ' \\'
-              pic[4] += '-------'
+                pic[4] += ' └'
+              pic[4] += '───────'
               if right:
-                pic[4] += '--'
+                pic[4] += '──'
               else:
-                pic[4] += '/ '
+                pic[4] += '┘ '
             if left:
               pic[1] = '  '
             if right:
@@ -655,11 +703,19 @@ class Board(object):
         if row == 6 and col >= 3:
           continue
         pic = grid[row*7+col]
-        output[-5] += pic[0]
-        output[-4] += pic[1]+'       '+pic[3]
-        output[-3] += pic[1]+pic[2]+pic[3]
-        output[-2] += pic[1]+'       '+pic[3]
-        output[-1] += pic[4]
+        if not solved and ((row*7 + col) == self.target[0] or
+                           (row*7 + col) == self.target[1]):
+          output[-5] += pic[0]
+          output[-4] += pic[1]
+          output[-3] += pic[2]+pic[3]+pic[4]
+          output[-2] += pic[5]
+          output[-1] += pic[6]
+        else:
+          output[-5] += pic[0]
+          output[-4] += pic[1]+'       '+pic[3]
+          output[-3] += pic[1]+pic[2]+pic[3]
+          output[-2] += pic[1]+'       '+pic[3]
+          output[-1] += pic[4]
     return '\n'.join(output)
 
   def __str__(self):
@@ -687,7 +743,7 @@ class Board(object):
     return '\n'.join(output)
 
 # print(pieces)
-orig = BoardForDate('dec', 31)
+orig = BoardForDate('oct', 9)
 
 # a = orig.Place(0,1,4,1)
 # print(str(a))
@@ -695,9 +751,6 @@ orig = BoardForDate('dec', 31)
 
 # a = a.Place(2,0,6,0)
 # print(str(a))
-
-solve_for_all = True
-print_impossible = False
 
 solved = list()
 # print(str(orig))
@@ -752,6 +805,21 @@ for s in solved:
     common_counts[pos] = common_counts.get(pos, 0) + 1
     # cover = pieces[piece_index][orientation]
 
+common_counts2 = dict()
+for s in solved:
+  for piece_index1, elem1 in enumerate(s.used):
+    if elem1 is None:
+      continue
+    orientation1, row1, col1 = elem1
+    for piece_index2 in range(piece_index1+1, len(s.used)):
+      elem2 = s.used[piece_index2]
+      if elem2 is None:
+        continue
+      orientation2, row2, col2 = elem2
+      pos1 = (piece_index1, orientation1, row1, col1)
+      pos2 = (piece_index2, orientation2, row2, col2)
+      common_counts2[(pos1, pos2)] = common_counts2.get((pos1, pos2), 0) + 1
+
 # print(common_counts)
 common = sorted(common_counts.items(), key=lambda x: (x[1], x[0]))
 common = list(filter(lambda x: x[1] > 1, common))
@@ -766,6 +834,27 @@ for i in range(max(0, len(common)-10), len(common)):
   assert b
   print(str(b))
 
+common2 = sorted(common_counts2.items(), key=lambda x: (x[1], x[0]))
+common2 = list(filter(lambda x: x[1] > 1, common2))
+print(common2)
+
+print('X' * 78)
+print('X' * 78)
+print('X' * 78)
+
+for i in range(max(0, len(common2)-10), len(common2)):
+  pos1, pos2 = common2[i][0]
+  piece_index1, orientation1, row1, col1 = pos1
+  piece_index2, orientation2, row2, col2 = pos2
+  count = common2[i][1]
+  print()
+  print(f'Most common double position {count} of {total} ({count/total*100:.2f}%)')
+  b = orig.Place(piece_index1, orientation1, row1, col1)
+  assert b
+  b = b.Place(piece_index2, orientation2, row2, col2)
+  assert b
+  print(str(b))
+
 print('X' * 78)
 print('X' * 78)
 print('X' * 78)
@@ -773,7 +862,7 @@ print('Found ' + str(len(solved)) + ' solutions')
 print('X' * 78)
 print('X' * 78)
 print('X' * 78)
-  
+
 print('\n\n'.join([str(x) for x in solved]))
 # print('\n\n'.join([str(x.used) for x in solved]))
 print('Found ' + str(len(solved)) + ' solutions')
