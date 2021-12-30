@@ -1,11 +1,35 @@
 #!/usr/bin/python3
 
 import sys
+import datetime
 
 solve_for_all = True
 print_impossible = False
 use_cross = None
 normal_rectangle = True
+use_current_day = True
+month = 'Feb'
+day = 29
+
+month_abbr = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+]
+
+if use_current_day:
+  current_time = datetime.datetime.now()
+  month = month_abbr[current_time.month-1]
+  day = current_time.day
 
 empty_board = [True] * (7*7)
 empty_board[0*7+6] = False
@@ -16,18 +40,18 @@ empty_board[6*7+5] = False
 empty_board[6*7+6] = False
 
 month_to_index = {
-  'jan': 0*7+0,
-  'feb': 0*7+1,
-  'mar': 0*7+2,
-  'apr': 0*7+3,
-  'may': 0*7+4,
-  'jun': 0*7+5,
-  'jul': 1*7+0,
-  'aug': 1*7+1,
-  'sep': 1*7+2,
-  'oct': 1*7+3,
-  'nov': 1*7+4,
-  'dec': 1*7+5,
+  month_abbr[0]: 0*7+0,
+  month_abbr[1]: 0*7+1,
+  month_abbr[2]: 0*7+2,
+  month_abbr[3]: 0*7+3,
+  month_abbr[4]: 0*7+4,
+  month_abbr[5]: 0*7+5,
+  month_abbr[6]: 1*7+0,
+  month_abbr[7]: 1*7+1,
+  month_abbr[8]: 1*7+2,
+  month_abbr[9]: 1*7+3,
+  month_abbr[10]: 1*7+4,
+  month_abbr[11]: 1*7+5,
 }
 
 day_to_index = {
@@ -65,20 +89,20 @@ day_to_index = {
 }
 
 index_to_name = [
-  'jan',
-  'feb',
-  'mar',
-  'apr',
-  'may',
-  'jun',
+  month_abbr[0],
+  month_abbr[1],
+  month_abbr[2],
+  month_abbr[3],
+  month_abbr[4],
+  month_abbr[5],
   '---',
 
-  'jul',
-  'aug',
-  'sep',
-  'oct',
-  'nov',
-  'dec',
+  month_abbr[6],
+  month_abbr[7],
+  month_abbr[8],
+  month_abbr[9],
+  month_abbr[10],
+  month_abbr[11],
   '---',
 
   ' 1 ',
@@ -743,7 +767,7 @@ class Board(object):
     return '\n'.join(output)
 
 # print(pieces)
-orig = BoardForDate('oct', 9)
+orig = BoardForDate(month, day)
 
 # a = orig.Place(0,1,4,1)
 # print(str(a))
