@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import sys
+
 empty_board = [True] * (7*7)
 empty_board[0*7+6] = False
 empty_board[1*7+6] = False
@@ -318,14 +320,16 @@ class Board(object):
 
   def InitWithDate(self, month, day):
     self.uncovered = empty_board[:]
-    self.uncovered[month_to_index[month]] = False
-    self.uncovered[day_to_index[day]] = False
+    self.target = [month_to_index[month], day_to_index[day]]
+    self.uncovered[self.target[0]] = False
+    self.uncovered[self.target[1]] = False
     self.used = [None] * len(pieces)
 
   def Clone(self):
     b = Board()
     b.uncovered = self.uncovered[:]
     b.used = self.used[:]
+    b.target = self.target
     return b
 
   def IsImpossible(self):
@@ -350,10 +354,9 @@ class Board(object):
                     if new_row >= 0 and new_col >= 0:
                       b = self.Place(piece_index, orientation, new_row, new_col)
                       if b is not None:
-                        print('FOUND' + str((piece_index, orientation, row, col)))
-                        print(str(self))
-                        print(cover)
-                        print(str(b))
+                        # print('FOUND' + str((piece_index, orientation, row, col)))
+                        # print(cover)
+                        # print(str(b))
                         found = True
                         break
                 if found:
@@ -363,8 +366,8 @@ class Board(object):
             if found:
               break
           if not found:
-            return False
-    return True
+            return True
+    return False
               
     
   def Place(self, piece_index, orientation, row, col):
@@ -402,7 +405,265 @@ class Board(object):
   def IsCovered(self, row, col):
     return not self.uncovered[row*7+col]
     
+  def PrettyStr(self):
+    grid = list()
+    for i in range(len(empty_board)):
+      grid.append(['       ', '  ', index_to_name[i], '  ', '       '])
+    # grid[self.target[0]] = (
+        # [' ***** ', ' *', index_to_name[self.target[0]], '* ', ' ***** '])
+    # grid[self.target[1]] = (
+        # [' ***** ', ' *', index_to_name[self.target[1]], '* ', ' ***** '])
+    for piece_index, elem in enumerate(self.used):
+      if elem is None:
+        continue
+      orientation, row, col = elem
+      cover = pieces[piece_index][orientation]
+      for i in range(len(cover)):
+        for j in range(len(cover[0])):
+          if cover[i][j]:
+            pic = grid[(row+i)*7+col+j]
+            left = False
+            up = False
+            right = False
+            down = False
+            upright = False
+            upleft = False
+            downright = False
+            downleft = False
+            if i-1 >= 0 and cover[i-1][j]:
+              up = True
+            if i+1 < len(cover) and cover[i+1][j]:
+              down = True
+            if j-1 >= 0 and cover[i][j-1]:
+              left = True
+            if j+1 < len(cover[0]) and cover[i][j+1]:
+              right = True
+            if (i-1 >= 0 and j-1 >= 0 and
+                cover[i-1][j-1] and cover[i-1][j-1]):
+              upleft = True
+            if (i-1 >= 0 and j+1 < len(cover[0]) and
+                cover[i-1][j+1] and cover[i-1][j+1]):
+              upright = True
+            if (i+1 < len(cover) and j-1 >= 0 and
+                cover[i+1][j-1] and cover[i+1][j-1]):
+              downleft = True
+            if (i+1 < len(cover) and j+1 < len(cover[0]) and
+                cover[i+1][j+1] and cover[i+1][j+1]):
+              downright = True
+            pic = [' ----- ', ' |', index_to_name[(row+i)*7+col+j],
+                   '| ', ' ----- ']
+            if up:
+              pic[0] = ''
+              if left:
+                if upleft:
+                  pic[0] += '  '
+                else:
+                  pic[0] += '-/'
+              else:
+                pic[0] += ' |'
+              pic[0] += '   '
+              if right:
+                if upright:
+                  pic[0] += '  '
+                else:
+                  pic[0] += '\\-'
+              else:
+                pic[0] += '| '
+            else:
+              pic[0] = ''
+              if left:
+                pic[0] += '--'
+              else:
+                pic[0] += ' /'
+              pic[0] += '---'
+              if right:
+                pic[0] += '--'
+              else:
+                pic[0] += '\\ '
+            if down:
+              pic[4] = ''
+              if left:
+                if downleft:
+                  pic[4] += '  '
+                else:
+                  pic[4] += '-\\'
+              else:
+                pic[4] += ' |'
+              pic[4] += '   '
+              if right:
+                if downright:
+                  pic[4] += '  '
+                else:
+                  pic[4] += '/-'
+              else:
+                pic[4] += '| '
+            else:
+              pic[4] = ''
+              if left:
+                pic[4] += '--'
+              else:
+                pic[4] += ' \\'
+              pic[4] += '---'
+              if right:
+                pic[4] += '--'
+              else:
+                pic[4] += '/ '
+            if left:
+              pic[1] = '  '
+            if right:
+              pic[3] = '  '
+            grid[(row+i)*7+col+j] = pic
+    output = list()
+    for row in range(7):
+      output.append('')
+      output.append('')
+      output.append('')
+      for col in range(7):
+        if row == 0 and col == 6:
+          continue
+        if row == 1 and col == 6:
+          continue
+        if row == 6 and col >= 3:
+          continue
+        pic = grid[row*7+col]
+        output[-3] += pic[0]
+        output[-2] += pic[1]+pic[2]+pic[3]
+        output[-1] += pic[4]
+    return '\n'.join(output)
+
+  def PrettyStrLarge(self):
+    grid = list()
+    for i in range(len(empty_board)):
+      grid.append(['           ', '  ', '  ' + index_to_name[i] + '  ',
+                   '  ', '           '])
+    # grid[self.target[0]] = (
+        # [' ***** ', ' *', index_to_name[self.target[0]], '* ', ' ***** '])
+    # grid[self.target[1]] = (
+        # [' ***** ', ' *', index_to_name[self.target[1]], '* ', ' ***** '])
+    for piece_index, elem in enumerate(self.used):
+      if elem is None:
+        continue
+      orientation, row, col = elem
+      cover = pieces[piece_index][orientation]
+      for i in range(len(cover)):
+        for j in range(len(cover[0])):
+          if cover[i][j]:
+            pic = grid[(row+i)*7+col+j]
+            left = False
+            up = False
+            right = False
+            down = False
+            upright = False
+            upleft = False
+            downright = False
+            downleft = False
+            if i-1 >= 0 and cover[i-1][j]:
+              up = True
+            if i+1 < len(cover) and cover[i+1][j]:
+              down = True
+            if j-1 >= 0 and cover[i][j-1]:
+              left = True
+            if j+1 < len(cover[0]) and cover[i][j+1]:
+              right = True
+            if (i-1 >= 0 and j-1 >= 0 and
+                cover[i-1][j-1] and cover[i-1][j-1]):
+              upleft = True
+            if (i-1 >= 0 and j+1 < len(cover[0]) and
+                cover[i-1][j+1] and cover[i-1][j+1]):
+              upright = True
+            if (i+1 < len(cover) and j-1 >= 0 and
+                cover[i+1][j-1] and cover[i+1][j-1]):
+              downleft = True
+            if (i+1 < len(cover) and j+1 < len(cover[0]) and
+                cover[i+1][j+1] and cover[i+1][j+1]):
+              downright = True
+            pic = [' --------- ', ' |', '  '+ index_to_name[(row+i)*7+col+j] + '  ',
+                   '| ', ' --------- ']
+            if up:
+              pic[0] = ''
+              if left:
+                if upleft:
+                  pic[0] += '  '
+                else:
+                  pic[0] += '-/'
+              else:
+                pic[0] += ' |'
+              pic[0] += '       '
+              if right:
+                if upright:
+                  pic[0] += '  '
+                else:
+                  pic[0] += '\\-'
+              else:
+                pic[0] += '| '
+            else:
+              pic[0] = ''
+              if left:
+                pic[0] += '--'
+              else:
+                pic[0] += ' /'
+              pic[0] += '-------'
+              if right:
+                pic[0] += '--'
+              else:
+                pic[0] += '\\ '
+            if down:
+              pic[4] = ''
+              if left:
+                if downleft:
+                  pic[4] += '  '
+                else:
+                  pic[4] += '-\\'
+              else:
+                pic[4] += ' |'
+              pic[4] += '       '
+              if right:
+                if downright:
+                  pic[4] += '  '
+                else:
+                  pic[4] += '/-'
+              else:
+                pic[4] += '| '
+            else:
+              pic[4] = ''
+              if left:
+                pic[4] += '--'
+              else:
+                pic[4] += ' \\'
+              pic[4] += '-------'
+              if right:
+                pic[4] += '--'
+              else:
+                pic[4] += '/ '
+            if left:
+              pic[1] = '  '
+            if right:
+              pic[3] = '  '
+            grid[(row+i)*7+col+j] = pic
+    output = list()
+    for row in range(7):
+      output.append('')
+      output.append('')
+      output.append('')
+      output.append('')
+      output.append('')
+      for col in range(7):
+        if row == 0 and col == 6:
+          continue
+        if row == 1 and col == 6:
+          continue
+        if row == 6 and col >= 3:
+          continue
+        pic = grid[row*7+col]
+        output[-5] += pic[0]
+        output[-4] += pic[1]+'       '+pic[3]
+        output[-3] += pic[1]+pic[2]+pic[3]
+        output[-2] += pic[1]+'       '+pic[3]
+        output[-1] += pic[4]
+    return '\n'.join(output)
+
   def __str__(self):
+    return self.PrettyStrLarge()
     output = list()
     for row in range(7):
       output.append('')
@@ -426,33 +687,95 @@ class Board(object):
     return '\n'.join(output)
 
 # print(pieces)
-orig = BoardForDate('jan', 1)
+orig = BoardForDate('dec', 31)
 
-a = orig.Place(0,1,4,1)
-print(str(a))
-print(a.IsImpossible())
-a = a.Place(2,0,6,0)
-print(str(a))
+# a = orig.Place(0,1,4,1)
+# print(str(a))
+# print(a.IsImpossible())
 
-assert False
-print(str(orig))
-for b in orig.All(0):
+# a = a.Place(2,0,6,0)
+# print(str(a))
+
+solve_for_all = True
+print_impossible = False
+
+solved = list()
+# print(str(orig))
+for b in orig.All(6):
   if b.IsImpossible():
-    print()
-    print('IMPOSSIBLE')
-    print(str(b))
+    if print_impossible:
+      print()
+      print('IMPOSSIBLE')
+      print(str(b))
     continue
-  break
-  for b2 in b.All(1):
+  for b2 in b.All(7):
+    if b2.IsImpossible():
+      if print_impossible:
+        print()
+        print('IMPOSSIBLE')
+        print(str(b2))
+      continue
     # print(str(b2))
     for b3 in b2.All(2):
+      if b3.IsImpossible():
+        continue
       # print(str(b3))
-      for b4 in b3.All(3):
+      for b4 in b3.All(5):
+        if b4.IsImpossible():
+          continue
         for b5 in b4.All(4):
-          for b6 in b5.All(5):
-            for b7 in b6.All(6):
-              for b8 in b7.All(7):
+          if b5.IsImpossible():
+            continue
+          for b6 in b5.All(3):
+            if b6.IsImpossible():
+              continue
+            for b7 in b6.All(0):
+              if b7.IsImpossible():
+                continue
+              for b8 in b7.All(1):
+                solved.append(b8)
+                print('SOLUTION' + str(len(solved)))
+                print(b8.used)
                 print(str(b8))
-                print(b8.pieces)
+                if not solve_for_all:
+                  sys.exit(0)
+
+total = len(solved)
+
+common_counts = dict()
+for s in solved:
+  for piece_index, elem in enumerate(s.used):
+    if elem is None:
+      continue
+    orientation, row, col = elem
+    pos = (piece_index, orientation, row, col)
+    common_counts[pos] = common_counts.get(pos, 0) + 1
+    # cover = pieces[piece_index][orientation]
+
+# print(common_counts)
+common = sorted(common_counts.items(), key=lambda x: (x[1], x[0]))
+common = list(filter(lambda x: x[1] > 1, common))
+print(common)
+
+for i in range(max(0, len(common)-10), len(common)):
+  piece_index, orientation, row, col = common[i][0]
+  count = common[i][1]
+  print()
+  print(f'Most common position {count} of {total} ({count/total*100:.2f}%)')
+  b = orig.Place(piece_index, orientation, row, col)
+  assert b
+  print(str(b))
+
+print('X' * 78)
+print('X' * 78)
+print('X' * 78)
+print('Found ' + str(len(solved)) + ' solutions')
+print('X' * 78)
+print('X' * 78)
+print('X' * 78)
+  
+print('\n\n'.join([str(x) for x in solved]))
+# print('\n\n'.join([str(x.used) for x in solved]))
+print('Found ' + str(len(solved)) + ' solutions')
 
 
