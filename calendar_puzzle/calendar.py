@@ -3,6 +3,8 @@
 import sys
 import datetime
 
+output_to_file = True
+file_name = 'output.txt'
 solve_for_all = True
 print_impossible = False
 
@@ -13,6 +15,8 @@ normal_rectangle = True
 use_current_day = True
 month = 'Feb'
 day = 29
+
+piece_ordering = [0, 7, 3, 2, 5, 6, 1, 4]
 
 month_abbr = [
   'Jan',
@@ -33,6 +37,10 @@ if use_current_day:
   current_time = datetime.datetime.now()
   month = month_abbr[current_time.month-1]
   day = current_time.day
+
+if len(sys.argv) > 2:
+  month = month_abbr[[x.lower() for x in month_abbr].index(sys.argv[1].lower())]
+  day = int(sys.argv[2])
 
 empty_board = [True] * (7*7)
 empty_board[0*7+6] = False
@@ -386,6 +394,18 @@ if use_line is not None:
       'x\n',
     ]
 
+
+pieces2 = list()
+for piece_index in piece_ordering:
+  pieces2.append(pieces[piece_index][:])
+for piece_index in range(len(pieces2)):
+  if sum([x == 'x' for x in pieces2[piece_index][0]]) == 6:
+    have_six_piece_index = piece_index
+    break
+print(f'have_six_piece_index: {have_six_piece_index}')
+pieces = pieces2
+del pieces2
+
 unicode_to_ascii_art = {
   '─': '-',
   '│': '|',
@@ -473,7 +493,7 @@ class Board(object):
     # print(str(self))
 
     # Check groups are of the right size.
-    have_six = self.used[0] is None
+    have_six = self.used[have_six_piece_index] is None
     for count in size_of_group:
       if count % 5 == 0:
         continue
@@ -916,16 +936,16 @@ class Board(object):
 # print(pieces)
 orig = BoardForDate(month, day)
 
-a = orig.Place(0,1,0,1)
-print(str(a))
-print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
+# a = orig.Place(0,1,0,1)
+# print(str(a))
+# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
 
-a = a.Place(2,0,1,0)
-print(str(a))
-print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
-a = a.Place(3,0,2,4)
-print(str(a))
-print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
+# a = a.Place(2,0,1,0)
+# print(str(a))
+# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
+# a = a.Place(3,0,2,4)
+# print(str(a))
+# print(f'a.IsImpossible() == ' + str(a.IsImpossible()))
 
 # assert False, 'Breakpoint'
 
@@ -972,9 +992,24 @@ def FindSolutions(b, pieces_left):
 
 
 solved = list()
-FindSolutions(orig, [6, 7, 2, 5, 4, 3, 0, 1])
+# FindSolutions(orig, [6, 7, 2, 5, 4, 3, 0, 1])
+# FindSolutions(orig, [0, 2, 7, 5, 4, 3, 6, 1])
+# FindSolutions(orig, [0, 2, 7, 3, 5, 4, 6, 1])
+# FindSolutions(orig, [3, 0, 7, 2, 5, 4, 6, 1])
+# FindSolutions(orig, [3, 0, 7, 2, 5, 6, 4, 1])
+# FindSolutions(orig, [7, 0, 3, 2, 5, 1, 4, 6])
+# FindSolutions(orig, [0, 7, 3, 2, 5, 6, 1, 4])
+FindSolutions(orig, list(range(8)))
 
 total = len(solved)
+
+if output_to_file:
+  with open(file_name, 'w') as f:
+    for s in solved:
+      f.write(str(s))
+      f.write('\n')
+    f.write('Found ' + str(len(solved)) + ' solutions')
+    f.write('\n')
 
 common_counts = dict()
 for s in solved:
