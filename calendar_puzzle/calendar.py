@@ -77,7 +77,7 @@ class Board(object):
             group_id += 1
     return False
 
-  def IsImpossible(self, layer=0):
+  def IsImpossible(self):
     # Flood fill.
     visited = [-1]*len(self.uncovered)
     num_neighbors = [-1]*len(self.uncovered)
@@ -150,22 +150,10 @@ class Board(object):
       if not found:
         return (True, None)
 
-    # return (False, None)
-
     # print('Found one for everything.')
     # print(possible)
     # Check for more than one.
     for unused_num_neighbors, unused_group_size, row, col in order:
-      # if layer > 0:
-      #   new_possible = set()
-      #   for piece_index, orientation, new_row, new_col in possible[row*7+col]:
-      #     b = self.Place(piece_index, orientation, new_row, new_col)
-      #     assert b is not None
-      #     if not b.IsImpossiblePreliminaryCheck():
-      #       new_possible.add((piece_index, orientation, new_row, new_col))
-      #       if len(new_possible) >= 2:
-      #         break
-      #   possible[row*7+col] = new_possible
       if len(possible[row*7+col]) >= 2:
         continue
       # print(f'Need something more for ({row}, {col}).')
@@ -194,11 +182,6 @@ class Board(object):
                     # Doing a more in depth check is not worth it.
                     if b.IsImpossiblePreliminaryCheck():
                       continue
-                    # if layer > 0 and b.IsImpossiblePreliminaryCheck():
-                    #   # pos = (piece_index, orientation, new_row, new_col)
-                    #   # print(f'sub_impossible {pos}')
-                    #   # print(str(b))
-                    #   continue
                     # print('FOUND' + str((piece_index, orientation, row, col)))
                     # print(cover)
                     # print(str(b))
@@ -220,20 +203,6 @@ class Board(object):
         # Returning early before checking all the other positions is
         # a large optimization.
         return (False, list(possible[row*7+col])[0])
-        
-      # if len(possible[row*7+col]) < 2:
-      #   if len(possible[row*7+col]) == 1:
-      #     # Returning early here is a huge optimization.
-      #     return (False, list(possible[row*7+col])[0])
-      #   else:
-      #     # Upon further inspection, the piece placements were actually
-      #     # impossible.
-      #     # print(f'Upon further inspection it is impossible. ({row}, {col})')
-      #     # print(str(self))
-      #     # print(possible)
-      #     # sys.exit(1)
-      #     return (True, None)
-
     return (False, None)
 
 
@@ -720,28 +689,7 @@ class BoardContext(object):
     new_left = pieces_left[1:]
     found_solution = False
     for new_board in b.All(piece_index):
-      # if len(pieces_left) >= 5:
-        # layer = 1
-      # elif len(pieces_left) >= 2:
-        # layer = 1
-      # else:
-        # layer = 0
-      layer = 0
-      impossible, only_move = new_board.IsImpossible(layer)
-      # if False and layer > 0:  # DEBUG
-      #   impossible1, only_move1 = new_board.IsImpossible(0)
-      #   if (impossible1 != impossible or
-      #       (only_move1 is None) != (only_move is None)):
-      #     print(f'ON THIS BOARD')
-      #     print(str(new_board))
-      #     print(f'using layer == {layer}')
-      #     print(f'({impossible}, {only_move})')
-      #     if only_move:
-      #       print(self.StringForPiece(only_move[0], only_move[1]))
-      #     print(f'using layer == 0')
-      #     print(f'({impossible1}, {only_move1})')
-      #     if only_move1:
-      #       print(self.StringForPiece(only_move1[0], only_move1[1]))
+      impossible, only_move = new_board.IsImpossible()
       if impossible:
         if self.print_impossible and len(pieces_left) >= 6:
           print()
