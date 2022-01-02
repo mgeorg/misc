@@ -59,10 +59,25 @@ class Board(object):
         if cover[i][j]:
           index = (row+i)*7+col+j
           if possible[index] is None:
-            possible[index] = list()
-          possible[index].append((piece_index, orientation, row, col))
+            possible[index] = set()
+          possible[index].add((piece_index, orientation, row, col))
 
-  def IsImpossible(self):
+  def IsImpossiblePreliminaryCheck(self):
+    visited = [-1]*len(self.uncovered)
+    num_neighbors = [-1]*len(self.uncovered)
+    group_id = 0
+    have_six = self.used[self.context.have_six_piece_index] is None
+    for row in range(7):
+      for col in range(7):
+        if self.uncovered[row*7+col]:
+          count = self.FloodFill(group_id, row, col, visited, num_neighbors)
+          if count > 0:
+            if count % 5 != 0 and (not have_six or count % 5 != 1):
+              return True
+            group_id += 1
+    return False
+
+  def IsImpossible(self, layer=0):
     # Flood fill.
     visited = [-1]*len(self.uncovered)
     num_neighbors = [-1]*len(self.uncovered)
@@ -143,6 +158,16 @@ class Board(object):
     # print(possible)
     # Check for more than one.
     for unused_num_neighbors, unused_group_size, row, col in order:
+      if layer > 0:
+        new_possible = set()
+        for piece_index, orientation, new_row, new_col in possible[row*7+col]:
+          b = self.Place(piece_index, orientation, new_row, new_col)
+          assert b is not None
+          if not b.IsImpossiblePreliminaryCheck():
+            new_possible.add((piece_index, orientation, new_row, new_col))
+            if len(new_possible) >= 2:
+              break
+        possible[row*7+col] = new_possible
       if len(possible[row*7+col]) >= 2:
         continue
       # print(f'Need something more for ({row}, {col}).')
@@ -161,14 +186,18 @@ class Board(object):
                 new_row = row-i
                 new_col = col-j
                 if new_row >= 0 and new_col >= 0:
-                  if ((piece_index, orientation, new_row, new_col) in
-                      possible[row*7+col]):
-                    # print('failed')
-                    found = True
-                    # Got to where we searched last time.
-                    break
+                  if (piece_index, orientation, new_row, new_col
+                     ) in possible[row*7+col]:
+                    continue
                   b = self.Place(piece_index, orientation, new_row, new_col)
                   if b is not None:
+                    # Check that the placed piece is actually possible later
+                    # down the line.
+                    if layer > 0 and b.IsImpossiblePreliminaryCheck():
+                      # pos = (piece_index, orientation, new_row, new_col)
+                      # print(f'sub_impossible {pos}')
+                      # print(str(b))
+                      continue
                     # print('FOUND' + str((piece_index, orientation, row, col)))
                     # print(cover)
                     # print(str(b))
@@ -180,13 +209,41 @@ class Board(object):
               break
           if found:
             break
-        if found:
+        if found and len(possible[row*7+col]) >= 2:
           break
+        else:
+          # Try to find two pieces.
+          found = False
       if len(possible[row*7+col]) < 2:
-        # Only one thing is possible.
-        # print('ONLY possible cover is ' + str(possible[row*7+col][0]))
-        return (False, possible[row*7+col][0])
+        if len(possible[row*7+col]) == 1:
+          pass
+          # return (False, possible[row*7+col][0])
+        else:
+          # Upon further inspection, the piece placements were actually
+          # impossible.
+          # print(f'Upon further inspection it is impossible. ({row}, {col})')
+          # print(str(self))
+          # print(possible)
+          # sys.exit(1)
+          return (True, None)
+
+    for p in possible:
+      if p is not None and len(p) == 1:
+        return (False, list(p)[0])
     return (False, None)
+
+    # only_possible = None
+    # for p in possible:
+    #   if p is not None and len(p) == 1:
+    #     if only_possible is None or only_possible == p[0]:
+    #       only_possible = p[0]
+    #     else:
+    #       # Two different things are the "only thing possible".
+    #       # Not actually correct, they might not overlap.
+    #       return (True, None)
+    # if only_possible is None:
+    #   return (False, None)
+    # return (False, only_possible)
               
     
   def Place(self, piece_index, orientation, row, col):
@@ -654,6 +711,12 @@ class BoardContext(object):
                 for line in p[i].strip().splitlines()]
 
 
+  def StringForPiece(self, piece_index, orientation):
+    cover = self.pieces[piece_index][orientation]
+    return '\n'.join(
+        [''.join(['x' if val else '.' for val in x]) for x in cover])
+
+
   def FindSolutions(self, b, pieces_left):
     if len(pieces_left) == 0:
       if self.print_solutions:
@@ -666,7 +729,28 @@ class BoardContext(object):
     new_left = pieces_left[1:]
     found_solution = False
     for new_board in b.All(piece_index):
-      impossible, only_move = new_board.IsImpossible()
+      if len(pieces_left) >= 5:
+        layer = 1
+      elif len(pieces_left) >= 2:
+        layer = 1
+      else:
+        layer = 0
+      layer = 0
+      impossible, only_move = new_board.IsImpossible(layer)
+      if False and layer > 0:  # DEBUG
+        impossible1, only_move1 = new_board.IsImpossible(0)
+        if (impossible1 != impossible or
+            (only_move1 is None) != (only_move is None)):
+          print(f'ON THIS BOARD')
+          print(str(new_board))
+          print(f'using layer == {layer}')
+          print(f'({impossible}, {only_move})')
+          if only_move:
+            print(self.StringForPiece(only_move[0], only_move[1]))
+          print(f'using layer == 0')
+          print(f'({impossible1}, {only_move1})')
+          if only_move1:
+            print(self.StringForPiece(only_move1[0], only_move1[1]))
       if impossible:
         if self.print_impossible and len(pieces_left) >= 6:
           print()
