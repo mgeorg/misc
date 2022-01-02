@@ -399,6 +399,55 @@ class Board(object):
     return self.PrettyStrLarge()
 
 
+def RotatePiece(piece):
+  cur =  [[char for char in line.strip()]
+          for line in piece.splitlines()]
+  new = list()
+  for col in range(len(cur[0])):
+    new.append([' '] * len(cur))
+  for row in range(len(cur)):
+    assert len(cur[row]) == len(cur[0])
+    for col in range(len(cur[row])):
+      new[col][len(cur)-row-1] = cur[row][col]
+  return '\n'.join([''.join(x) for x in new])
+
+
+def MirrorPiece(piece):
+  cur =  [[char for char in line.strip()]
+          for line in piece.splitlines()]
+  new = list()
+  for col in range(len(cur)):
+    new.append([' '] * len(cur[0]))
+  for row in range(len(cur)):
+    assert len(cur[row]) == len(cur[0])
+    for col in range(len(cur[row])):
+      new[row][len(cur[0])-col-1] = cur[row][col]
+  return '\n'.join([''.join(x) for x in new])
+
+
+def AllOrientations(piece):
+  orig = piece.strip()
+  orientations = set()
+  orientations.add(orig)
+  # Non-mirrored rotations.
+  p = RotatePiece(orig)
+  orientations.add(p)
+  p = RotatePiece(p)
+  orientations.add(p)
+  p = RotatePiece(p)
+  orientations.add(p)
+  # Mirror rotations.
+  p = MirrorPiece(orig)
+  orientations.add(p)
+  p = RotatePiece(p)
+  orientations.add(p)
+  p = RotatePiece(p)
+  orientations.add(p)
+  p = RotatePiece(p)
+  orientations.add(p)
+  return sorted(orientations)
+
+
 class BoardContext(object):
   def __init__(self, options=dict()):
     self.solve_for_all = options.get('solve_for_all', True)
@@ -543,247 +592,55 @@ class BoardContext(object):
       '---',
     ]
     
-    # TODO create rotated and mirrored orientations automatically.
     self.pieces = [
-      [
-        'xxx\n'
-        'xxx\n',
-    
-        'xx\n'
-        'xx\n'
-        'xx\n',
-      ],
-      [
-        '.xx\n'
-        'xxx\n',
-    
-        'xx.\n'
-        'xxx\n',
-    
-        'xxx\n'
-        'xx.\n',
-    
-        'xxx\n'
-        '.xx\n',
-    
-        '.x\n'
-        'xx\n'
-        'xx\n',
-    
-        'x.\n'
-        'xx\n'
-        'xx\n',
-    
-        'xx\n'
-        'xx\n'
-        'x.\n',
-    
-        'xx\n'
-        'xx\n'
-        '.x\n',
-      ],
-      [
-        'x..\n'
-        'x..\n'
-        'xxx\n',
-    
-        'xxx\n'
-        'x..\n'
-        'x..\n',
-    
-        'xxx\n'
-        '..x\n'
-        '..x\n',
-    
-        '..x\n'
-        '..x\n'
-        'xxx\n',
-      ],
-      [
-        'x.x\n'
-        'xxx\n',
-    
-        'xxx\n'
-        'x.x\n',
-    
-        'xx\n'
-        'x.\n'
-        'xx\n',
-    
-        'xx\n'
-        '.x\n'
-        'xx\n',
-      ],
-      [
-        'xxxx\n'
-        '...x\n',
-    
-        '...x\n'
-        'xxxx\n',
-    
-        'xxxx\n'
-        'x...\n',
-    
-        'x...\n'
-        'xxxx\n',
-    
-        'xx\n'
-        'x.\n'
-        'x.\n'
-        'x.\n',
-    
-        'x.\n'
-        'x.\n'
-        'x.\n'
-        'xx\n',
-    
-        'xx\n'
-        '.x\n'
-        '.x\n'
-        '.x\n',
-    
-        '.x\n'
-        '.x\n'
-        '.x\n'
-        'xx\n',
-      ],
-      [
-        'xxxx\n'
-        '..x.\n',
-    
-        '..x.\n'
-        'xxxx\n',
-    
-        'xxxx\n'
-        '.x..\n',
-    
-        '.x..\n'
-        'xxxx\n',
-    
-        'x.\n'
-        'xx\n'
-        'x.\n'
-        'x.\n',
-    
-        'x.\n'
-        'x.\n'
-        'xx\n'
-        'x.\n',
-    
-        '.x\n'
-        'xx\n'
-        '.x\n'
-        '.x\n',
-    
-        '.x\n'
-        '.x\n'
-        'xx\n'
-        '.x\n',
-      ],
-      [
-        'xxx.\n'
-        '..xx\n',
-    
-        '..xx\n'
-        'xxx.\n',
-    
-        '.xxx\n'
-        'xx..\n',
-    
-        'xx..\n'
-        '.xxx\n',
-    
-        '.x\n'
-        'xx\n'
-        'x.\n'
-        'x.\n',
-    
-        'x.\n'
-        'x.\n'
-        'xx\n'
-        '.x\n',
-    
-        'x.\n'
-        'xx\n'
-        '.x\n'
-        '.x\n',
-    
-        '.x\n'
-        '.x\n'
-        'xx\n'
-        'x.\n',
-      ],
-      [
-        'xx.\n'
-        '.x.\n'
-        '.xx\n',
-    
-        '.xx\n'
-        '.x.\n'
-        'xx.\n',
-    
-        'x..\n'
-        'xxx\n'
-        '..x\n',
-    
-        '..x\n'
-        'xxx\n'
-        'x..\n',
-      ],
+      'xxx\n'
+      'xxx\n',
+
+      'xx.\n'
+      'xxx\n',
+
+      'x..\n'
+      'x..\n'
+      'xxx\n',
+
+      'xxx\n'
+      'x.x\n',
+
+      'xxxx\n'
+      '...x\n',
+
+      'xxxx\n'
+      '..x.\n',
+
+      'xxx.\n'
+      '..xx\n',
+
+      'xx.\n'
+      '.x.\n'
+      '.xx\n',
     ]
     
     if self.use_cross is not None:
-      self.pieces[self.use_cross] = [
+      self.pieces[self.use_cross] = (
         '.x.\n'
         'xxx\n'
-        '.x.\n',
-      ]
+        '.x.\n')
     
     if not self.normal_rectangle:
-      self.pieces[0] = [
+      self.pieces[0] = (
         'xx.\n'
         'xxx\n'
-        '.x.\n',
-    
-        '.xx\n'
-        'xxx\n'
-        '.x.\n',
-    
-        '.x.\n'
-        'xxx\n'
-        '.xx\n',
-    
-        '.x.\n'
-        'xxx\n'
-        'xx.\n',
-      ]
+        '.x.\n')
     
     if self.use_line is not None:
       if self.use_line == 0:
-        self.pieces[self.use_line] = [
-          'xxxxxx\n',
-    
-          'x\n'
-          'x\n'
-          'x\n'
-          'x\n'
-          'x\n'
-          'x\n',
-        ]
+        self.pieces[self.use_line] = 'xxxxxx\n'
       else:
-        self.pieces[self.use_line] = [
-          'xxxxx\n',
-    
-          'x\n'
-          'x\n'
-          'x\n'
-          'x\n'
-          'x\n',
-        ]
+        self.pieces[self.use_line] = 'xxxxx\n'
 
     pieces2 = list()
     for piece_index in self.piece_ordering:
-      pieces2.append(self.pieces[piece_index][:])
+      pieces2.append(AllOrientations(self.pieces[piece_index]))
     for piece_index in range(len(pieces2)):
       if sum([x == 'x' for x in pieces2[piece_index][0]]) == 6:
         self.have_six_piece_index = piece_index
