@@ -400,14 +400,14 @@ class Board(object):
 
 
 class BoardContext(object):
-  def __init__(self):
-    self.solve_for_all = True
-    self.print_impossible = False
-    self.print_solutions = False
+  def __init__(self, options=dict()):
+    self.solve_for_all = options.get('solve_for_all', True)
+    self.print_impossible = options.get('print_impossible', False)
+    self.print_solutions = options.get('print_solutions', False)
 
-    self.use_cross = None
-    self.use_line = None
-    self.normal_rectangle = True
+    self.use_cross = options.get('use_cross', None)
+    self.use_line = options.get('use_line', None)
+    self.normal_rectangle = options.get('normal_rectangle', True)
     
     self.piece_ordering = [0, 7, 3, 2, 5, 6, 1, 4]
     
@@ -849,7 +849,7 @@ class BoardContext(object):
     if month is None or day is None:
       current_time = datetime.datetime.now()
       if month is None:
-        month = month_abbr[current_time.month-1]
+        month = self.month_abbr[current_time.month-1]
       if day is None:
         day = current_time.day
     
@@ -968,9 +968,8 @@ if __name__ == '__main__':
   import sys
   import random
   file_name = 'output.txt'
+  # context = BoardContext({'print_solutions': True, 'solve_for_all': False})
   context = BoardContext()
-  # context.print_solutions = True
-  # context.solve_for_all = False
 
   month = None
   day = None
