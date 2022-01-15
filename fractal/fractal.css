@@ -1,0 +1,14 @@
+.click_box {
+  border:1px solid #000000;
+}
+
+.storage_box {
+  border:1px solid #000000;
+}
+
+html, body {
+  overflow: 'hidden';
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
