@@ -6,8 +6,92 @@
   border:1px solid #000000;
 }
 
+.display_message {
+  display: inline-block;
+}
+
+.display_message_prompt {
+  display: inline-block;
+  margin: 0 0 0 5;
+}
+
+.shop {
+  border:1px solid #000000;
+}
+
+.shop_message {
+  margin: 0 0 0 5;
+}
+
+.resources {
+  border:1px solid #000000;
+}
+.resource_container {
+  display: inline-block;
+  font-weight: bold;
+  margin: 0 0 0 5;
+}
+
+.achievement {
+  background-color: #AAAAAA;
+  border:1px solid #000000;
+  color: #000000;
+  padding: 5;
+}
+
+.achievement_title {
+  font-weight: bold;
+}
+
+.achievement_cost {
+  font-style: italic;
+}
+
+.resource_counter {
+  display: inline-block;
+  font-weight: normal;
+}
+
+.display {
+  border:1px solid #000000;
+  display: inline-block;
+}
+
+.save {
+  display: inline-block;
+}
+
+.disabled_display {
+  display: inline-block;
+
+  overflow: hidden;
+  height: 100px;
+  align-items: end;
+  vertical-align: bottom;
+}
+
+.disabled_display_message {
+  /*display: inline-block;*/
+
+  overflow: hidden;
+  align-items: end;
+  vertical-align: bottom;
+}
+
+::selection {
+  background-color: transparent;
+  color: #000;
+}
+
+td {
+  /* border:1px solid #000000; */
+  vertical-align: top;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 html, body {
-  overflow: 'hidden';
+  /*overflow: 'hidden';*/
   margin: 0 !important;
   padding: 0 !important;
 }

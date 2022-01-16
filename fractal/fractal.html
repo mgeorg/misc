@@ -4,14 +4,63 @@
 <link href="fractal.css" rel="preload" as="style"
       onload="this.rel='stylesheet';" type="text/css" />
 <script defer type="text/javascript" src="fractal.js"></script>
+<script defer type="text/javascript" src="param.js"></script>
 </head>
 
 <body>
-<canvas id="main_canvas" class="click_box" width=50 height=50>
-</canvas>
+<table width="100%">
+<tr>
+<td colspan="3">
+  <div id="display" class="display" style="width: 80%;">
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message6" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message5" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message4" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message3" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message2" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message1" class="display_message">&nbsp;</div>
+  </div>
+  <div id="save" class="save" width="20%">
+    Slot 1: <button onclick="LoadState(1);">Load</button>
+    <button onclick="SaveState(1);">Save</button><br>
+    Slot 2: <button onclick="LoadState(2);">Load</button>
+    <button onclick="SaveState(2);">Save</button><br>
+    Slot 3: <button onclick="LoadState(3);">Load</button>
+    <button onclick="SaveState(3);">Save</button><br>
+    Slot 4: <button onclick="LoadState(4);">Load</button>
+    <button onclick="SaveState(4);">Save</button><br>
+    Slot 5: <button onclick="LoadState(5);">Load</button>
+    <button onclick="SaveState(5);">Save</button><br>
+  </div>
+</td>
+</tr>
 
-<div id="display" class="display">
-</div>
+<tr>
+<td width="20%">
+  <div id="resources" class="resources" width="100%">
+    <div class="resource_container">
+      Points: <div id="points_counter" class="resource_counter"></div>
+    </div>
+    <div id="pellets_container" class="resource_container"
+         style="display: none">
+      Pellets: <div id="pellets_counter" class="resource_counter"></div>
+    </div>
+  </div>
+</td>
+<td width="60%">
+  <canvas id="main_canvas" class="click_box" width="50" height="50"></canvas>
+</td>
+<td width="20%">
+  <div id="shop" class="shop" width="100%" height="100%"></div>
+</td>
+</tr>
+
+</table>
 
 </body>
 
