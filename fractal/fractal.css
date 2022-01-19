@@ -23,8 +23,31 @@
   margin: 0 0 0 5;
 }
 
+.box_container {
+  align-items: end;
+  position:absolute;
+  bottom: 0px;
+}
+
+.box_name {
+  display: inline-block;
+  font-weight: bold;
+  margin: 0 0 0 5;
+}
+
+.box_counter {
+  display: inline-block;
+}
+
+.box_canvas {
+  align-items: end;
+  border:1px solid #000000;
+  margin: 0 0 0 0;
+}
+
 .resources {
   border:1px solid #000000;
+  position:relative;
 }
 .resource_container {
   display: inline-block;
@@ -33,10 +56,14 @@
 }
 
 .achievement {
-  background-color: #AAAAAA;
+  background-color: #DDDDDD;
   border:1px solid #000000;
   color: #000000;
   padding: 5;
+}
+
+.achievement_buyable {
+  background-color: #AAAAAA;
 }
 
 .achievement_title {

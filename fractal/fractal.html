@@ -5,6 +5,7 @@
       onload="this.rel='stylesheet';" type="text/css" />
 <script defer type="text/javascript" src="fractal.js"></script>
 <script defer type="text/javascript" src="param.js"></script>
+<script defer type="text/javascript" src="/home/mgeorg/dep/seedrandom/seedrandom.js"></script>
 </head>
 
 <body>
@@ -49,6 +50,12 @@
     <div id="pellets_container" class="resource_container"
          style="display: none">
       Pellets: <div id="pellets_counter" class="resource_counter"></div>
+    </div>
+    <div id="box_container" class="box_container" style="display: none">
+      <div id="box_name" class="box_name">Count:</div>
+      <div id="box_counter" class="box_counter"></div>
+      <canvas id="box_canvas" class="box_canvas" width="50"
+              height="50"></canvas>
     </div>
   </div>
 </td>
