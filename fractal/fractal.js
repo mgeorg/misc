@@ -1,3 +1,4 @@
+// TODO(mgeorg) Pellets count is incorrect after buys.
 const main_canvas = document.getElementById("main_canvas");
 var ctx = main_canvas.getContext("2d");
 var cursor_path = null;
@@ -6,11 +7,50 @@ var garden_pellets_path = null;
 var state = null;
 var register_click = null;
 var garden_prng = null;
+var save_state_timer = null;
+var perform_tick_timer = null;
+var cheat_list = null;
+var last_cursor_position = null;
+var save_actions = true;
 
 function CheatTick(num) {
   for (let i = 0; i < num; ++i) {
     PerformTick();
   }
+}
+
+function CheatCursorClick() {
+  register_click = {
+      x: last_cursor_position.x,
+      y: last_cursor_position.y,
+      target: null
+  }
+}
+
+function TryBuy(achievement) {
+  let elem = document.getElementById('achievement_' + achievement);
+  if (elem) {
+    elem.click();
+  }
+}
+
+function AutoPlay() {
+  clearInterval(save_state_timer);
+  clearInterval(perform_tick_timer);
+  Reset();
+  cheat_list = {}
+  current_tick = 10;
+  for (let i = 0; i < 100; ++i) {
+    cheat_list[current_tick] = CheatCursorClick;
+    current_tick += 10;
+  }
+  document.getElementById('slot5').style.display = 'none';
+  document.getElementById('tick_counter_container').style.display = 'block';
+  cheat_list[511] = TryBuy.bind(null, 'auto_cursor_click');
+  cheat_list[1101] = TryBuy.bind(null, 'auto_cursor_click_from_points');
+  cheat_list[2101] = TryBuy.bind(null, 'auto_cursor_click_from_points');
+  cheat_list[3101] = TryBuy.bind(null, 'auto_cursor_click_from_points');
+  perform_tick_timer = setInterval(PerformTick, 10);
 }
 
 function LoadPage() {
@@ -22,26 +62,15 @@ function LoadPage() {
   state = DeepCopy(fractal_param['start_state']);
   ResizeCanvas();
   LoadState();
-  setInterval(SaveState, 1000);
-  setInterval(PerformTick, 100);
+  save_state_timer = setInterval(SaveState, 1000);
+  perform_tick_timer = setInterval(PerformTick, 100);
 
   window.addEventListener('resize', function() {
     ResizeCanvas();
     DrawBox();
   }, true);
-  main_canvas.addEventListener("click",  function (e) {
-    register_click = {x: e.clientX, y: e.clientY};
-  }, false)
-  shop.addEventListener("click",  function (e) {
-    let elem = e.target.closest('.achievement');
-    if (elem && elem.id && elem.id.startsWith('achievement_')) {
-      let achievement = elem.id.substring('achievement_'.length);
-      let data = fractal_param['achievements'][achievement];
-      if (AchievementBuyable(achievement, data)) {
-        BuyAchievement(achievement, data);
-        elem.remove();
-      }
-    }
+  document.addEventListener("click",  function (e) {
+    register_click = {x: e.clientX, y: e.clientY, target: e.target};
   }, false)
 }
 
@@ -298,12 +327,46 @@ function UpdateResources() {
 }
 
 function PerformTick() {
+  if (cheat_list) {
+    if (state['tick'] in cheat_list) {
+      cheat_list[state['tick']]();
+    }
+    document.getElementById('tick_counter').textContent = state['tick'];
+  }
+  let click = register_click
+  register_click = null;
+
+  if (save_actions) {
+    if (!('actions' in state)) {
+      state['actions'] = {}
+    }
+    if (click) {
+      state['actions'][state['tick']] = click;
+    }
+  }
+
+  if (click && click.target) {
+    let elem = click.target.closest('.achievement');
+    if (elem && elem.id && elem.id.startsWith('achievement_')) {
+      let achievement = elem.id.substring('achievement_'.length);
+      let data = fractal_param['achievements'][achievement];
+      if (AchievementBuyable(achievement, data)) {
+        BuyAchievement(achievement, data);
+        elem.remove();
+      }
+    }
+  }
+
   ++state['tick'];
   state['points'] += state['points_per_tick'];
   state['cursor_clicks'] += state['cursor_clicks_per_tick'];
 
-  let click = register_click
-  register_click = null;
+  if (state['harvest']) {
+    delete state['harvest'];
+    state['pellets'] += Object.keys(state['garden_pellets']).length;
+    state['garden_pellets'] = {};
+  }
+
   if (click) {
     ++state['click'];
     let canvas_click = PositionInCanvas(main_canvas, click);
@@ -339,7 +402,7 @@ function GrowGarden() {
       garden_prng = sr('', {'state': state['garden_seed']});
     }
   }
-  let grow_threshold = 1/(10*10*60); // On average once every 10 minutes.
+  let grow_threshold = 1/(10*3*60); // On average once every 3 minutes.
   grow_threshold *= state['garden_speed'];
 
   let garden_size = 8**(state['garden']-1);
@@ -558,6 +621,7 @@ function DrawCursor(params) {
   let mouth_ratio = 3/4;
   let cursor_center = {x: params.x + cursor_radius + width/20,
                        y: params.y + height/2};
+  last_cursor_position = cursor_center;
   let x_offset = 0;
   let y_offset = 15 * params.scale;
   let font_size = Math.floor(40 * params.scale);

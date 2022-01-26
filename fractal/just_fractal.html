@@ -1,0 +1,55 @@
+<html>
+
+<head>
+<link href="fractal.css" rel="preload" as="style"
+      onload="this.rel='stylesheet';" type="text/css" />
+<script defer type="text/javascript" src="just_fractal.js"></script>
+<script defer type="text/javascript" src="/home/mgeorg/dep/seedrandom/seedrandom.js"></script>
+</head>
+
+<body>
+<table>
+<tr>
+<td width=80%>
+  <div id="display" class="display" style="width: 100%;">
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message6" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message5" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message4" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message3" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message2" class="display_message">&nbsp;</div><br>
+    <div class="display_message_prompt">%&nbsp;</div>
+    <div id="display_message1" class="display_message">&nbsp;</div>
+  </div>
+</td>
+<td>
+  <div id="buttons" class="buttons" style="width: 100%;">
+    <button type="button" onclick="AddFractalDepth(1);"
+    >Increase Depth</button><br>
+    <button type="button" onclick="AddFractalDepth(-1);"
+    >Decrease Depth</button><br>
+    <button type="button" onclick="AddFractalDepth('adaptive');"
+    >Adaptive Depth</button><br>
+    Adaptive Scale: <input id="adaptive_scale" type="text" value="1" /><br>
+    <button type="button" onclick="ClearClickList();"
+    >Clear</button><br>
+    <div id="fractal_depth">-</div><br>
+  </div>
+</td>
+</tr>
+
+<tr>
+<td width="100%" colspan=2>
+  <canvas id="main_canvas" class="click_box" width="50" height="50"></canvas>
+</td>
+</tr>
+
+</table>
+
+</body>
+
+</html>
