@@ -10,7 +10,7 @@
 <body>
 <table>
 <tr>
-<td width=80%>
+<td width="100%">
   <div id="display" class="display" style="width: 100%;">
     <div class="display_message_prompt">%&nbsp;</div>
     <div id="display_message6" class="display_message">&nbsp;</div><br>
@@ -32,6 +32,13 @@
     >Increase Depth</button><br>
     <button type="button" onclick="AddFractalDepth(-1);"
     >Decrease Depth</button><br>
+    <button type="button" onclick="toggleEvenDistance();"
+    >Even Distance</button>
+    <div id="even_distance_div">-</div><br>
+  </div>
+</td>
+<td>
+  <div id="buttons2" class="buttons" style="width: 100%;">
     <button type="button" onclick="AddFractalDepth('adaptive');"
     >Adaptive Depth</button><br>
     Adaptive Scale: <input id="adaptive_scale" type="text" value="1" /><br>
@@ -43,7 +50,7 @@
 </tr>
 
 <tr>
-<td width="100%" colspan=2>
+<td width="100%" colspan=3>
   <canvas id="main_canvas" class="click_box" width="50" height="50"></canvas>
 </td>
 </tr>

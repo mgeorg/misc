@@ -5,6 +5,10 @@ var fractalDepth = 2;
 var adaptiveScale = 1;
 var click_list = [];
 var click_list_path = null;
+var use_even_distances = false;
+var select_click_i = null;
+var delete_path = null;
+
 
 function AddFractalDepth(num) {
   if (num == 'adaptive') {
@@ -27,6 +31,13 @@ function AddFractalDepth(num) {
   DrawOnCanvas();
 }
 
+function toggleEvenDistance() {
+  use_even_distances = !use_even_distances;
+  document.getElementById("even_distance_div").textContent =
+      String(use_even_distances);
+  DrawOnCanvas();
+}
+
 function ClearClickList() {
   click_list = [];
   DrawOnCanvas();
@@ -35,8 +46,6 @@ function ClearClickList() {
 function LoadPage() {
   ResizeCanvas();
 }
-
-var select_click_i = null;
 
 function ProcessClick(e) {
   let elem = e.target.closest(".click_box");
@@ -47,7 +56,15 @@ function ProcessClick(e) {
   register_click = {x: e.clientX, y: e.clientY, target: e.target};
   click = PositionInCanvas(main_canvas, register_click);
 
-  if (select_click_i != null) {
+  if (select_click_i !== null && delete_path &&
+      ctx.isPointInPath(delete_path, click.x, click.y)) {
+    click_list.splice(select_click_i, 1);
+    select_click_i = null;
+    DrawOnCanvas();
+    return;
+  }
+
+  if (select_click_i !== null) {
     click_list[select_click_i] = click;
     select_click_i = null;
     DrawOnCanvas();
@@ -72,6 +89,7 @@ function ProcessClick(e) {
     select_click_i = null;
     DrawOnCanvas();
   }
+
 }
 
 function ProcessMouseMove(e) {
@@ -79,7 +97,7 @@ function ProcessMouseMove(e) {
   if (!elem) {
     return;
   }
-  if (select_click_i == null) {
+  if (select_click_i === null) {
     return;
   }
   register_click = {x: e.clientX, y: e.clientY, target: e.target};
@@ -130,24 +148,112 @@ function DrawOnCanvas() {
 
   ctx.clearRect(0, 0, width, height);
 
+  if (select_click_i !== null) {
+    delete_path = new Path2D();
+    ctx.font = "25px Arial";
+    let measure = ctx.measureText("Click to Delete");
+    ctx.fillStyle = "black";
+    ctx.fillText("Click to Delete", 20, measure.fontBoundingBoxAscent + 10);
+
+    delete_path.moveTo(0, 0);
+    delete_path.lineTo(measure.width + 40, 0);
+    delete_path.lineTo(measure.width + 40, measure.fontBoundingBoxAscent + 20);
+    delete_path.lineTo(0, measure.actualBoundingBoxDescent + measure.fontBoundingBoxAscent + 20);
+    delete_path.lineTo(0, 0);
+    delete_path.closePath();
+    ctx.stroke(delete_path);
+  }
+
   click_list_path = null;
 
   if (click_list.length < 2) {
     return;
   }
-  let start = click_list[0];
-  let end = click_list[click_list.length-1];
+
+  click_list_path = new Path2D();
+  for (let i = 0; i < click_list.length; ++i) {
+    let cur = click_list[i];
+    click_list_path.moveTo(cur.x+10, cur.y);
+    click_list_path.arc(cur.x, cur.y, 10, 0, 2*Math.PI, false);
+  }
+
+  let modified_click_list_path = null;
+  let modified_click_list = click_list;
+  if (use_even_distances) {
+    let prev = click_list[0];
+    let min_r = null;
+    // Determine the minimum r.
+    for (let i = 1; i < click_list.length; ++i) {
+      let cur = click_list[i];
+      let polar  = get_polar(cur.x - prev.x, cur.y - prev.y);
+      if (!min_r || polar.r < min_r) {
+        min_r = polar.r;
+      }
+      prev = cur;
+    }
+
+    // Get a path with polar coordinates but only min_r lengths.
+    prev = click_list[0];
+    let path = [];
+    for (let i = 1; i < click_list.length; ++i) {
+      let cur = click_list[i];
+      let polar  = get_polar(cur.x - prev.x, cur.y - prev.y);
+      polar.r = min_r;
+      path.push(polar);
+      prev = cur;
+    }
+
+    // Determine where the end is using only the polar path.
+    prev = click_list[0];
+    for (let i = 0; i < path.length; ++i) {
+      let polar = path[i];
+      let xy = get_cartesian(polar.theta, polar.r);
+      let cur = {x: prev.x + xy.x, y: prev.y + xy.y};
+      prev = cur;
+    }
+    let end = prev;
+
+    // Turn and scale everything so that the path ends up where it used to.
+    let main_polar = get_polar(
+        click_list[click_list.length-1].x - click_list[0].x,
+        click_list[click_list.length-1].y - click_list[0].y);
+    let new_main_polar = get_polar(end.x - click_list[0].x,
+                                   end.y - click_list[0].y);
+    let modify_polar = {
+        theta: new_main_polar.theta - main_polar.theta,
+        r: new_main_polar.r / main_polar.r};
+    
+    modified_click_list = [];
+    modified_click_list.push(click_list[0]);
+    prev = click_list[0];
+    for (let i = 0; i < path.length; ++i) {
+      let polar = path[i];
+      polar.r /= modify_polar.r;
+      polar.theta -= modify_polar.theta;
+      let xy = get_cartesian(polar.theta, polar.r);
+      let cur = {x: prev.x + xy.x, y: prev.y + xy.y};
+      modified_click_list.push(cur);
+      prev = cur;
+    }
+
+    modified_click_list_path = new Path2D();
+    for (let i = 0; i < modified_click_list.length; ++i) {
+      let cur = modified_click_list[i];
+      modified_click_list_path.moveTo(cur.x+10, cur.y);
+      modified_click_list_path.arc(cur.x, cur.y, 10, 0, 2*Math.PI, false);
+    }
+  }
+
+  let start = modified_click_list[0];
+  let end = modified_click_list[modified_click_list.length-1];
   let main_polar = get_polar(end.x-start.x, end.y-start.y);
 
   let unbounded = false;
 
   let prev = start;
   let path = [];
-  click_list_path = new Path2D();
-  click_list_path.moveTo(start.x+10, start.y);
-  click_list_path.arc(start.x, start.y, 10, 0, 2*Math.PI, false);
-  for (let i = 1; i < click_list.length; ++i) {
-    let cur = click_list[i];
+  for (let i = 1; i < modified_click_list.length; ++i) {
+    let cur = modified_click_list[i];
     let polar  = get_polar(cur.x - prev.x, cur.y - prev.y);
     polar.theta -= main_polar.theta;
     polar.r /= main_polar.r;
@@ -156,8 +262,6 @@ function DrawOnCanvas() {
     }
     path.push(polar);
     prev = cur;
-    click_list_path.moveTo(cur.x+10, cur.y);
-    click_list_path.arc(cur.x, cur.y, 10, 0, 2*Math.PI, false);
   }
 
   ctx.beginPath();
@@ -170,6 +274,14 @@ function DrawOnCanvas() {
   }
   ctx.moveTo(end.x, end.y);
   ctx.stroke();
+
+  if (use_even_distances) {
+    ctx.strokeStyle = "blue";
+    ctx.lineWidth = 3;
+    ctx.stroke(modified_click_list_path);
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+  }
 
   ctx.strokeStyle = "red";
   ctx.lineWidth = 3;
