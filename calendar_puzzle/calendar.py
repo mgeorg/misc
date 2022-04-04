@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import copy
 import datetime
 
 unicode_to_ascii_art = {
@@ -23,6 +24,26 @@ class Board(object):
     self.uncovered[self.target[1]] = False
     self.used = [None] * len(self.context.pieces)
 
+  def InitWithUsed(self, target, used):
+    self.used = used[:]
+    self.target = target[:]
+    self.ResetUncovered()
+
+  def ResetUncovered(self):
+    self.uncovered = self.context.empty_board[:]
+    self.uncovered[self.target[0]] = False
+    self.uncovered[self.target[1]] = False
+    for piece_index, elem in enumerate(self.used):
+      if elem is None:
+        continue
+      orientation, row, col = elem
+      cover = self.context.pieces[piece_index][orientation]
+      for i in range(len(cover)):
+        for j in range(len(cover[0])):
+          if cover[i][j]:
+            index = (row+i)*7+col+j
+            self.uncovered[index] = False
+    
   def Clone(self):
     b = Board(self.context)
     b.uncovered = self.uncovered[:]
@@ -466,7 +487,7 @@ def AllOrientations(piece):
 
 
 class BoardContext(object):
-  def __init__(self, options=dict()):
+  def __init__(self, options=dict(), pieces=None):
     self.solve_for_all = options.get('solve_for_all', True)
     self.print_impossible = options.get('print_impossible', False)
     self.print_solutions = options.get('print_solutions', False)
@@ -475,7 +496,7 @@ class BoardContext(object):
     self.use_line = options.get('use_line', None)
     self.normal_rectangle = options.get('normal_rectangle', True)
     
-    self.piece_ordering = [0, 7, 3, 2, 5, 6, 1, 4]
+    piece_ordering = [0, 7, 3, 2, 5, 6, 1, 4]
     
     self.solved = None
     
@@ -609,66 +630,69 @@ class BoardContext(object):
       '---',
     ]
     
-    self.pieces = [
-      'xxx\n'
-      'xxx\n',
-
-      'xx.\n'
-      'xxx\n',
-
-      'x..\n'
-      'x..\n'
-      'xxx\n',
-
-      'xxx\n'
-      'x.x\n',
-
-      'xxxx\n'
-      '...x\n',
-
-      'xxxx\n'
-      '..x.\n',
-
-      'xxx.\n'
-      '..xx\n',
-
-      'xx.\n'
-      '.x.\n'
-      '.xx\n',
-    ]
-    
-    if self.use_cross is not None:
-      self.pieces[self.use_cross] = (
-        '.x.\n'
+    if pieces is None:
+      self.pieces = [
         'xxx\n'
-        '.x.\n')
-    
-    if not self.normal_rectangle:
-      self.pieces[0] = (
+        'xxx\n',
+
         'xx.\n'
+        'xxx\n',
+
+        'x..\n'
+        'x..\n'
+        'xxx\n',
+
         'xxx\n'
-        '.x.\n')
-    
-    if self.use_line is not None:
-      if self.use_line == 0:
-        self.pieces[self.use_line] = 'xxxxxx\n'
-      else:
-        self.pieces[self.use_line] = 'xxxxx\n'
+        'x.x\n',
 
-    pieces2 = list()
-    for piece_index in self.piece_ordering:
-      pieces2.append(AllOrientations(self.pieces[piece_index]))
-    for piece_index in range(len(pieces2)):
-      if sum([x == 'x' for x in pieces2[piece_index][0]]) == 6:
-        self.have_six_piece_index = piece_index
-        break
-    self.pieces = pieces2
-    del pieces2
+        'xxxx\n'
+        '...x\n',
 
-    for p in self.pieces:
-      for i in range(len(p)):
-        p[i] = [[char == 'x' for char in line.strip()]
-                for line in p[i].strip().splitlines()]
+        'xxxx\n'
+        '..x.\n',
+
+        'xxx.\n'
+        '..xx\n',
+
+        'xx.\n'
+        '.x.\n'
+        '.xx\n',
+      ]
+      
+      if self.use_cross is not None:
+        self.pieces[self.use_cross] = (
+          '.x.\n'
+          'xxx\n'
+          '.x.\n')
+      
+      if not self.normal_rectangle:
+        self.pieces[0] = (
+          'xx.\n'
+          'xxx\n'
+          '.x.\n')
+      
+      if self.use_line is not None:
+        if self.use_line == 0:
+          self.pieces[self.use_line] = 'xxxxxx\n'
+        else:
+          self.pieces[self.use_line] = 'xxxxx\n'
+
+      pieces2 = list()
+      for piece_index in piece_ordering:
+        pieces2.append(AllOrientations(self.pieces[piece_index]))
+      for piece_index in range(len(pieces2)):
+        if sum([x == 'x' for x in pieces2[piece_index][0]]) == 6:
+          self.have_six_piece_index = piece_index
+          break
+      self.pieces = pieces2
+      del pieces2
+
+      for p in self.pieces:
+        for i in range(len(p)):
+          p[i] = [[char == 'x' for char in line.strip()]
+                  for line in p[i].strip().splitlines()]
+    else:
+      self.pieces = copy.deepcopy(pieces)
 
 
   def StringForPiece(self, piece_index, orientation):
@@ -681,7 +705,6 @@ class BoardContext(object):
     if len(pieces_left) == 0:
       if self.print_solutions:
         print('SOLUTION ' + str(len(self.solved)))
-        # print(b.used)
         print(str(b))
       self.solved.append(b)
       return True
@@ -725,6 +748,18 @@ class BoardContext(object):
     b.InitWithDate(month, day)
     return b
 
+  def SetSolved(self, dict_dump):
+    self.solved = list()
+    target = dict_dump['target']
+    used = [None] * len(self.pieces)
+    for board_pieces in dict_dump['boards']:
+      for full_elem in board_pieces:
+        (piece_index, orientation, row, col) = full_elem
+        used[piece_index] = (orientation, row, col)
+      b = Board(self)
+      b.InitWithUsed(target, used)
+      self.solved.append(b)
+
   def Solve(self, month=None, day=None):
     if month is None or day is None:
       current_time = datetime.datetime.now()
@@ -745,6 +780,29 @@ class BoardContext(object):
         f.write('\n')
       f.write('Found ' + str(len(self.solved)) + ' solutions')
       f.write('\n')
+    
+  def ToDict(self):
+    assert self.solved is not None
+    boards = []
+    target = None
+    for s in self.solved:
+      board_pieces = list()
+      if target is None:
+        target = s.target[:]
+      else:
+        assert target == s.target
+      for piece_index, elem in enumerate(s.used):
+        if elem is None:
+          continue
+        orientation, row, col = elem
+        board_pieces.append((piece_index, orientation, row, col))
+      boards.append(board_pieces)
+    dump = dict()
+    dump['pieces'] = self.pieces
+    dump['target'] = target
+    dump['boards'] = boards
+
+    return dump
     
   def PrintCommonSingleConfigurations(self):
     assert self.solved is not None
