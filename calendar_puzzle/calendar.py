@@ -16,6 +16,11 @@ class Board(object):
   def __init__(self, context):
     self.context = context
 
+  def InitEmpty(self):
+    self.uncovered = self.context.empty_board[:]
+    self.target = [None, None]
+    self.used = [None] * len(self.context.pieces)
+
   def InitWithDate(self, month, day):
     self.uncovered = self.context.empty_board[:]
     self.target = [self.context.month_to_index[month],
@@ -273,13 +278,15 @@ class Board(object):
                    '  ', '           '])
     if not solved:
       i = self.target[0]
-      grid[i] = ['           ', '   ┌───┐   ', '  ',
-                 ' │' + self.context.index_to_name[i] + '│ ',
-                 '  ','   └───┘   ', '           ']
+      if i is not None:
+        grid[i] = ['           ', '   ┌───┐   ', '  ',
+                   ' │' + self.context.index_to_name[i] + '│ ',
+                   '  ','   └───┘   ', '           ']
       i = self.target[1]
-      grid[i] = ['           ', '   ┌───┐   ', '  ',
-                 ' │' + self.context.index_to_name[i] + '│ ',
-                 '  ','   └───┘   ', '           ']
+      if i is not None:
+        grid[i] = ['           ', '   ┌───┐   ', '  ',
+                   ' │' + self.context.index_to_name[i] + '│ ',
+                   '  ','   └───┘   ', '           ']
     for piece_index, elem in enumerate(self.used):
       if elem is None:
         continue
