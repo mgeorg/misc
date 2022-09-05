@@ -1223,7 +1223,7 @@ function findWebhookTask(args, state) {
       'method' : 'get',
       'headers' : HEADERS,
       'muteHttpExceptions' : true,
-    }));
+    });
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     throw new Error('Unable to fetch webhooks: ' + response.error);
@@ -1304,7 +1304,7 @@ function findWebhooksWithPrefixTask(args, state) {
       'method' : 'get',
       'headers' : HEADERS,
       'muteHttpExceptions' : true,
-    }));
+    });
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     throw new Error('Unable to fetch webhooks: ' + response.error);
