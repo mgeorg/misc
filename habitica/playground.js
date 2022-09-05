@@ -1,15 +1,29 @@
-// Description:
-// Start quests automatically when certain conditions are met.
-// Either all active memebers of the party joined the quest
-// or a certain number of hours elapsed since the quest was
-// created.
+// A Habitica User Script which does a bunch of different things.
+// 
+// QuestAutoStart:
+//   Start quests automatically when certain conditions are met.
+//   Either all active memebers of the party joined the quest
+//   or a certain number of hours elapsed since the quest was
+//   created.
+// 
+// QuestAutoInvite:
+//   TODO description.
+//
+// SkillMultiCast:
+//   TODO description.
+//
+// Bank:
+//   TODO description.
+//
+// CostumeChange:
+//   TODO description.
 
 // ==========================================
 // [Users] Required script data to fill in
 // ==========================================
-const USER_ID = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+const USER_ID = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX';
 // This is a password, don't share it with anyone.
-const API_TOKEN = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
+const API_TOKEN = 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX';
 // This needs to be a publicly accessible URL for this script.
 // To get it, click on deploy, click on the gear (settings) icon,
 // click on web app, click on permissions and select (anyone),
@@ -21,12 +35,11 @@ const API_TOKEN = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX";
 // to happen), and to contact external websites.  You can check
 // that the only website this script contacts is habitica by searching
 // the script for http
-const WEB_APP_URL = "problem";
+const WEB_APP_URL = 'problem';
 
 // ==========================================
 // [Users] Configuration                     
 // ==========================================
-const ENABLE_NOTIFICATION = 1;
 const LOG_ON_FAILURE = true;
 const MESSAGE_ON_FAILURE = false;
 
@@ -48,29 +61,31 @@ const NUM_DAYS_UNTIL_INACTIVE = 3.0;
 const NUM_HOURS_UNTIL_FORCE_START = 24.0;
 
 // SpellSpammer:
-const FIREBALL_STRING = "Smash Rage";
+const FIREBALL_STRING = 'Smash Rage';
 
 // ==========================================
 // [Users] Do not edit code below this line
 // ==========================================
-const AUTHOR_ID = "074e86a5-a37e-4f73-8826-461f7514ac70";
-const SCRIPT_NAME = "Playground";
+const AUTHOR_ID = '074e86a5-a37e-4f73-8826-461f7514ac70';
+const SCRIPT_NAME = 'Playground';
 const HEADERS = {
-  "x-client" : AUTHOR_ID + "-" + SCRIPT_NAME,
-  "x-api-user" : USER_ID,
-  "x-api-key" : API_TOKEN,
+  'x-client' : AUTHOR_ID + '-' + SCRIPT_NAME,
+  'x-api-user' : USER_ID,
+  'x-api-key' : API_TOKEN,
 }
 const GOOGLE_APP_SCRIPT_BASE_THIS = this;
 const TASK_GROUP_MAX_NUM_TRIES = 30;
-const TASK_GROUP_PROPERTY_PREFIX = 'TaskGroup_';
+
 const LOCK_PROPERTY_PREFIX = 'Lock_';
+const LOG_PROPERTY_PREFIX = 'Log_';
 const SAVE_COSTUME_PROPERTY_PREFIX = 'CostumeSave_';
+const TASK_GROUP_PROPERTY_PREFIX = 'TaskGroup_';
 
 const DEBUG_DISABLE_TRIGGERS = false;
 const DEBUG_LOG_REQUESTS = false;
+const DEBUG_MESSAGE_INSTEAD_OF_START_QUEST = false;
 
 const quests = [
-  'windup',
   'robot',
   'fluorite',
   'stone',
@@ -83,7 +98,6 @@ const quests = [
   'turquoise',
 ];
 
-const LOG_PROPERTY_PREFIX = 'Log_';
 const COSTUME_VARIABLES = [
   'items.currentMount',
   'items.currentPet',
@@ -117,10 +131,10 @@ function doSetup() {
   deleteAllPropertiesWithPrefix(TASK_GROUP_PROPERTY_PREFIX);
   deleteAllPropertiesWithPrefix(LOCK_PROPERTY_PREFIX);
   createWebhooks(true);
-  deleteTriggers("checkStartQuest");
+  deleteTriggers('checkStartQuest');
   if (ENABLE_AUTO_START_QUEST) {
     ScriptApp.newTrigger(
-        "checkStartQuest").timeBased().everyMinutes(15).create();
+        'checkStartQuest').timeBased().everyMinutes(15).create();
   }
 }
 
@@ -175,7 +189,7 @@ function isTrue(elem) {
 class PauseTaskGroupException extends Error {
   constructor(pauseNumMSec) {
     super('pausing execution of task group for ' + pauseNumMSec + 'ms.');
-    this.name = "PauseTaskGroupException";
+    this.name = 'PauseTaskGroupException';
   // The actual delay is on a granularity of about 1 minute, so
   // don't rely on fast resuming.  But the task group will
   // be paused for at least this amount of time.
@@ -311,7 +325,7 @@ class TaskGroup {
   }
 
   triggerFunctionName() {
-    return "restartQueue_"+this.queueKey;
+    return 'restartQueue_' + this.queueKey;
   }
 
   runTask(task, optionalError) {
@@ -778,9 +792,9 @@ function acceptQuestIfPendingTask(args, state) {
   let RSVPNeeded = state.fetched.user.party.quest.RSVPNeeded;
   if (quest.key && !quest.active && RSVPNeeded) {
     const params = {
-      "method" : "post", 
-      "headers" : HEADERS,
-      "muteHttpExceptions" : true,
+      'method' : 'post', 
+      'headers' : HEADERS,
+      'muteHttpExceptions' : true,
     }
     const api = 'groups/party/quests/accept';
     const response = habiticaApi(api, params);
@@ -794,13 +808,13 @@ function acceptQuestIfPendingTask(args, state) {
 
 function inviteQuest(questKey) {
   const params = {
-    "method" : "post", 
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'post', 
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
   
-  const api = "groups/party/quests/invite/" + questKey;
-  var response = habiticaApi(api, params);
+  const api = 'groups/party/quests/invite/' + questKey;
+  const response = habiticaApi(api, params);
   if (!response.success) {
     reportFailure('Unable to invite quest: ' + response.error);
     return;
@@ -812,14 +826,14 @@ function inviteQuest(questKey) {
 function fetchUserToStateTask(args, state) {
   checkRateLimit(state);
   const params = {
-    "method" : "get",
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
-  var api = "user";
+  const api = 'user';
 
   if (isTrue(args.userFields)) {
-    url += "?userFields=" + args.userFields;
+    url += '?userFields=' + args.userFields;
   }
 
   const response = habiticaApi(api, params);
@@ -974,14 +988,14 @@ function changeCostumeTask(args, state) {
 function changeItemTask(args, state) {
   checkRateLimit(state);
   const params = {
-    "method" : "post",
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'post',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
 
-  const api = "user/equip/" + args.type +
+  const api = 'user/equip/' + args.type +
               '/' + args.equip;
-  var response = habiticaApi(api, params);
+  const response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     // Logger.log(JSON.stringify(response));
@@ -994,13 +1008,13 @@ function changeItemTask(args, state) {
 function changePreferenceTask(args, state) {
   checkRateLimit(state);
   const params = {
-    "method" : "post",
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'post',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
 
-  const api = "user/unlock?path=" + args.path;
-  var response = habiticaApi(api, params);
+  const api = 'user/unlock?path=' + args.path;
+  const response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     Logger.log(JSON.stringify(response));
@@ -1011,13 +1025,13 @@ function changePreferenceTask(args, state) {
 function findLoadCostumeRewardTask(args, state) {
   checkRateLimit(state);
   const params = {
-    "method" : "get",
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
 
-  const api = "tasks/user?type=rewards";
-  var response = habiticaApi(api, params);
+  const api = 'tasks/user?type=rewards';
+  const response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     Logger.log(JSON.stringify(response));
@@ -1049,21 +1063,21 @@ function createOrUpdateLoadCostumeRewardTask(args, state) {
   }
   checkRateLimit(state);
   const payload = {
-    "type" : 'reward',
-    "text" : LOAD_REWARD_FORMAT.replace('{0}', args.saveName),
-    "notes" : '',
+    'type' : 'reward',
+    'text' : LOAD_REWARD_FORMAT.replace('{0}', args.saveName),
+    'notes' : '',
   }
   
   const params = {
-    "method" : "post",
-    "headers" : HEADERS,
-    "contentType" : "application/json",
-    "payload" : JSON.stringify(payload),
-    "muteHttpExceptions" : true,
+    'method' : 'post',
+    'headers' : HEADERS,
+    'contentType' : 'application/json',
+    'payload' : JSON.stringify(payload),
+    'muteHttpExceptions' : true,
   }
-  const api = "tasks/user";
+  const api = 'tasks/user';
 
-  var response = habiticaApi(api, params);
+  const response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     Logger.log(JSON.stringify(response));
@@ -1077,11 +1091,11 @@ function createOrUpdateLoadCostumeRewardTask(args, state) {
 function fetchPartyToStateTask(args, state) {
   checkRateLimit(state);
   const params = {
-    "method" : "get",
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
-  const api = "groups/party";
+  const api = 'groups/party';
 
   const response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
@@ -1121,20 +1135,20 @@ function runPrivateMessageTaskGroup(message, toUserId, state) {
 function privateMessageTask(args, state) {
   checkRateLimit(state);
   const payload = {
-    "message" : args.message,
-    "toUserId" : args.toUserId,
+    'message' : args.message,
+    'toUserId' : args.toUserId,
   }
   
   const params = {
-    "method" : "post",
-    "headers" : HEADERS,
-    "contentType" : "application/json",
-    "payload" : JSON.stringify(payload),
-    "muteHttpExceptions" : true,
+    'method' : 'post',
+    'headers' : HEADERS,
+    'contentType' : 'application/json',
+    'payload' : JSON.stringify(payload),
+    'muteHttpExceptions' : true,
   }
 
-  const api = "members/send-private-message";
-  var response = habiticaApi(api, params);
+  const api = 'members/send-private-message';
+  const response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     throw new Error('Unable to send private message to ' +
@@ -1197,12 +1211,12 @@ function findWebhookTask(args, state) {
   state.webhookId = null;
   // Fetch the current webhooks to see if we already
   // created one.
-  var response = habiticaApi(
+  const response = habiticaApi(
     'user/webhook',
     {
-      "method" : "get",
-      "headers" : HEADERS,
-      "muteHttpExceptions" : true,
+      'method' : 'get',
+      'headers' : HEADERS,
+      'muteHttpExceptions' : true,
     }));
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
@@ -1210,8 +1224,8 @@ function findWebhookTask(args, state) {
   }
   // Search through existing webhooks to see if any match
   // our label.
-  for (var i in response.data) {
-    var webhook = response.data[i];
+  for (let i in response.data) {
+    let webhook = response.data[i];
     if (webhook.label == args.label) {
       state.webhookId = webhook.id;
       break;
@@ -1221,12 +1235,12 @@ function findWebhookTask(args, state) {
 
 function createWebhookTask(args, state) {
   checkRateLimit(state);
-  let api = "user/webhook";
+  let api = 'user/webhook';
   let payload = {
-    "url" : WEB_APP_URL,
-    "label" : args.label,
-    "type" : args.webhookType,
-    "enabled": isTrue(args.enabled),
+    'url' : WEB_APP_URL,
+    'label' : args.label,
+    'type' : args.webhookType,
+    'enabled': isTrue(args.enabled),
   }
   if (isTrue(args.options)) {
     payload['options'] = args.options;
@@ -1242,11 +1256,11 @@ function createWebhookTask(args, state) {
   }
 
   const params = {
-    "method" : method,
-    "headers" : HEADERS,
-    "contentType" : "application/json",
-    "payload" : JSON.stringify(payload),
-    "muteHttpExceptions" : true,
+    'method' : method,
+    'headers' : HEADERS,
+    'contentType' : 'application/json',
+    'payload' : JSON.stringify(payload),
+    'muteHttpExceptions' : true,
   }
 
   let response = habiticaApi(api, params);
@@ -1278,12 +1292,12 @@ function findWebhooksWithPrefixTask(args, state) {
   state.webhookIds = null;
   // Fetch the current webhooks to see if we already
   // created one.
-  var response = habiticaApi(
+  const response = habiticaApi(
     'user/webhook',
     {
-      "method" : "get",
-      "headers" : HEADERS,
-      "muteHttpExceptions" : true,
+      'method' : 'get',
+      'headers' : HEADERS,
+      'muteHttpExceptions' : true,
     }));
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
@@ -1291,8 +1305,8 @@ function findWebhooksWithPrefixTask(args, state) {
   }
   // Search through existing webhooks to see if any match
   // our label.
-  for (var i in response.data) {
-    var webhook = response.data[i];
+  for (let i in response.data) {
+    let webhook = response.data[i];
     if (webhook.label.startsWith(args.labelPrefix)) {
       if (isFalse(state.webhookIds)) {
         state.webhookIds = {};
@@ -1304,16 +1318,16 @@ function findWebhooksWithPrefixTask(args, state) {
 
 function deleteWebhookTask(args, state) {
   checkRateLimit(state);
-  let origApi = "user/webhook";
+  let origApi = 'user/webhook';
   if (isFalse(state.webhookIds)) {
     return;
   }
   let webhookIds = Object.keys(state.webhookIds);
   for (let webhookId of webhookIds) {
     const params = {
-      "method" : 'delete',
-      "headers" : HEADERS,
-      "muteHttpExceptions" : true,
+      'method' : 'delete',
+      'headers' : HEADERS,
+      'muteHttpExceptions' : true,
     }
     let url = origApi + '/' + webhookId;
     let response = habiticaApi(api, params);
@@ -1362,11 +1376,11 @@ function deleteMessagesTaskGroup(prefix) {
 
 function findSelfMessagesTask(args, state) {
   checkRateLimit(state);
-  let api = "inbox/messages";
+  let api = 'inbox/messages';
   const params = {
-    "method" : 'get',
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
   let response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
@@ -1394,12 +1408,12 @@ function findScriptMessagesTask(args, state) {
 
 function deleteMessagesTask(args, state) {
   checkRateLimit(state);
-  let origApi = "user/messages";
+  let origApi = 'user/messages';
   while (isTrue(state.messages)) {
     const params = {
-      "method" : 'delete',
-      "headers" : HEADERS,
-      "muteHttpExceptions" : true,
+      'method' : 'delete',
+      'headers' : HEADERS,
+      'muteHttpExceptions' : true,
     }
     let url = origApi + '/' + state.messages[0].id;
     Logger.log('deleting message: ' + url);
@@ -1458,13 +1472,13 @@ function releaseLock(lockKey) {
 }
 
 function exploreStateTask(args, state) {
-  let var_path = args.explore.split('.');
+  let varPath = args.explore.split('.');
   let explore = state;
-  for (let var_path_part of var_path) {
-    explore = explore[var_path_part];
+  for (let varPathPart of varPath) {
+    explore = explore[varPathPart];
     if (explore == undefined) {
       Logger.log(
-          var_path_part + ' of ' + args.explore + ' does not exist in state');
+          varPathPart + ' of ' + args.explore + ' does not exist in state');
       return;
     }
   }
@@ -1478,9 +1492,9 @@ function createWebhooks(deleteTriggers) {
     {
       'label': SCRIPT_NAME + ': questActivity Webhook',
       'options': {
-        "questStarted": true,
-        "questFinished": false,
-        "questInvited": false,
+        'questStarted': true,
+        'questFinished': false,
+        'questInvited': false,
       },
       'webhookType': 'questActivity',
       'enabled': true,
@@ -1488,7 +1502,7 @@ function createWebhooks(deleteTriggers) {
     {
       'label': SCRIPT_NAME + ': taskActivity Webhook',
       'options': {
-        "scored": true,
+        'scored': true,
       },
       'webhookType': 'taskActivity',
       'enabled': true,
@@ -1506,7 +1520,7 @@ function doPost(e) {
     const taskText = data.task.text;
     const taskNotes = data.task.notes;
     
-    if (data.type == "scored") {
+    if (data.type == 'scored') {
       createKeyNames(taskNotes);
 
       if (taskText == SAVE_STRING) {
@@ -1566,12 +1580,12 @@ function deleteAllTriggers() {
 
 function getMember() {
   const params = {
-    "method" : "get", 
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get', 
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   };
   
-  const api = "members/" + USER_ID;
+  const api = 'members/' + USER_ID;
   var response = habiticaApi(api, params);
   var explore = response.data;
   for (var key in explore) {
@@ -1582,11 +1596,11 @@ function getMember() {
 
 function getUser() {
   const params = {
-    "method" : "get",
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
-  var api = "user";
+  var api = 'user';
 
   const response = habiticaApi(api, params);
   var explore = response.data;
@@ -1598,11 +1612,11 @@ function getUser() {
 
 function getParty() {
   const params = {
-    "method" : "get",
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
-  var api = "groups/party/members?includeAllPublicFields=true&includeTasks=false";
+  var api = 'groups/party/members?includeAllPublicFields=true&includeTasks=false';
 
   const response = habiticaApi(api, params);
   var rsvp = {};
@@ -1621,11 +1635,11 @@ function getParty() {
 
 function getRSVPNeeded() {
   const params = {
-    "method" : "get",
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
-  var api = "groups/party/members?includeAllPublicFields=true&includeTasks=false";
+  var api = 'groups/party/members?includeAllPublicFields=true&includeTasks=false';
 
   const response = habiticaApi(api, params);
   if (!response.success) {
@@ -1740,11 +1754,11 @@ function checkRateLimit(state) {
 
 function checkResponseRateLimit(response, state) {
   if(isTrue(response.headers)) {
-    let value1 = response.headers["x-ratelimit-remaining"];
+    let value1 = response.headers['x-ratelimit-remaining'];
     if (value1 != undefined) {
       state.rateLimitRemaining = Number(value1);
     }
-    let value2 = response.headers["x-ratelimit-reset"];
+    let value2 = response.headers['x-ratelimit-reset'];
     if (value2 != undefined) {
       state.rateLimitReset = value2;
     }
@@ -1793,9 +1807,9 @@ function getQuestMembers() {
   // If a quest is invited but not started and I might want to start it,
   // then return the members that are currently on it, otherwise null.
   const params = {
-    "method" : "get", 
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get', 
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   };
   
   const api = 'groups/party';
@@ -1816,9 +1830,9 @@ function getQuestMembers() {
 
 function getMemberInfo() {
   const params = {
-    "method" : "get", 
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'get', 
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
   
   const api =
@@ -1848,11 +1862,14 @@ function getMemberInfo() {
 }
 
 function startQuest() {
-  //api_sendPrivateMessage('would have started quest', USER_ID);
+  if (isTrue(DEBUG_MESSAGE_INSTEAD_OF_START_QUEST)) {
+    privateMessage('QuestAutoStart: Would have started quest', USER_ID);
+    return;
+  }
   const params = {
-    "method" : "post", 
-    "headers" : HEADERS,
-    "muteHttpExceptions" : true,
+    'method' : 'post', 
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
   }
   const api = 'groups/party/quests/force-start';
   const response = habiticaApi(api, params);
