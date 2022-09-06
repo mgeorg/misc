@@ -47,8 +47,11 @@ const WEB_APP_URL = 'replace_me';
 const LOG_ON_FAILURE = true;
 const MESSAGE_ON_FAILURE = false;
 
+// QuestAutoAccept:
+const ENABLE_QUEST_AUTO_ACCEPT = false;
+
 // QuestAutoStart:
-const ENABLE_AUTO_START_QUEST = false;
+const ENABLE_QUEST_AUTO_START = false;
 // Only start your own quests.  If you're a party
 // leader, then you can start all quests (and can set it to false).
 const START_ONLY_MY_QUESTS = true;
@@ -64,11 +67,31 @@ const NUM_DAYS_UNTIL_INACTIVE = 3.0;
 // Fractional values are allowed.
 const NUM_HOURS_UNTIL_FORCE_START = 24.0;
 
+// QuestAutoInvite:
+const ENABLE_QUEST_AUTO_INVITE = false;
+// Quest list.
+// TODO Move this outside of the script somewhere.
+const questQueue = [
+  'robot',
+  'fluorite',
+  'stone',
+  'blackPearl',
+  'bronze',
+  'ruby',
+  'amber',
+  'onyx',
+  'silver',
+  'turquoise',
+];
+// TODO Add in an after user field outside of script.
+
 // SpellSpammer:
 const ENABLE_SKILL_MULTI_CAST = false;
-// TODO change variable names to be generic.
+// TODO Enable setting of different tasks.
 const SKILL_MULTI_CAST_STRING = 'Smash Rage';
-// TODO create string for skill key.
+// TODO allow choosing of target task (outside of script).
+
+// TODO add auto cast at certain times.
 
 // ==========================================
 // [Users] Do not edit code below this line
@@ -91,19 +114,6 @@ const TASK_GROUP_PROPERTY_PREFIX = 'TaskGroup_';
 const DEBUG_DISABLE_TRIGGERS = false;
 const DEBUG_LOG_REQUESTS = false;
 const DEBUG_MESSAGE_INSTEAD_OF_START_QUEST = false;
-
-const quests = [
-  'robot',
-  'fluorite',
-  'stone',
-  'blackPearl',
-  'bronze',
-  'ruby',
-  'amber',
-  'onyx',
-  'silver',
-  'turquoise',
-];
 
 const COSTUME_VARIABLES = [
   'items.currentMount',
@@ -137,13 +147,19 @@ function doSetup() {
   deleteAllTriggers();
   deleteAllPropertiesWithPrefix(TASK_GROUP_PROPERTY_PREFIX);
   deleteAllPropertiesWithPrefix(LOCK_PROPERTY_PREFIX);
+
   createWebhooks(true);
-  deleteFunctionTriggers('checkStartQuest');
-  // deleteAllTriggers();
-  if (ENABLE_AUTO_START_QUEST) {
+  if (ENABLE_QUEST_AUTO_START) {
     ScriptApp.newTrigger(
         'checkStartQuest').timeBased().everyMinutes(15).create();
   }
+  if (ENABLE_QUEST_AUTO_ACCEPT) {
+    // Use a trigger to accept quests where we were not notified with
+    // an invitation (shouldn't really happen).
+    ScriptApp.newTrigger(
+        'runAcceptQuestTaskGroup').timeBased().everyHours(1).create();
+  }
+  resetQuestIndex();
 }
 
 function resetQuestIndex() {
@@ -159,16 +175,9 @@ function inviteNextQuest() {
   } else {
     questIndex = Number(questIndex);
   }
-  let quest = quests[questIndex];
-  Logger.log('quest = ' + quest);
-  Logger.log('questIndex = ' + questIndex);
+  let quest = questQueue[questIndex];
   if (quest != undefined) {
-    Logger.log('inviting')
-    let success = inviteQuest(quest);
-    if (success) {
-      questIndex += 1;
-      scriptProperties.setProperty('questIndex', String(questIndex));
-    }
+    runInviteQuestTaskGroup(quest);
   }
 }
 
@@ -212,6 +221,10 @@ function restartQueue_taskGroup1() {
 
 function restartQueue_acceptQuestTaskGroup() {
   return restartQueue('acceptQuestTaskGroup');
+}
+
+function restartQueue_inviteQuestTaskGroup() {
+  return restartQueue('inviteQuestTaskGroup');
 }
 
 // TODO remove references to "spam".
@@ -796,18 +809,22 @@ function runSaveCostumeTaskGroup(saveName) {
   return group.run();
 }
 
+function acceptQuest() {
+  const params = {
+    'method' : 'post', 
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
+  }
+  const api = 'groups/party/quests/accept';
+  return habiticaApi(api, params);
+}
+
 function acceptQuestIfPendingTask(args, state) {
   checkRateLimit(state);
   let quest = state.fetched.party.quest;
   let RSVPNeeded = state.fetched.user.party.quest.RSVPNeeded;
   if (quest.key && !quest.active && RSVPNeeded) {
-    const params = {
-      'method' : 'post', 
-      'headers' : HEADERS,
-      'muteHttpExceptions' : true,
-    }
-    const api = 'groups/party/quests/accept';
-    const response = habiticaApi(api, params);
+    const response = acceptQuest();
     checkResponseRateLimit(response, state);
     if (!response.success) {
       throw new Error('Unable to accept quest: ' + response.error);
@@ -816,22 +833,44 @@ function acceptQuestIfPendingTask(args, state) {
 }
 
 
-function inviteQuest(questKey) {
+function runInviteQuestTaskGroup(questKey) {
+  let group = new TaskGroup('inviteQuestTaskGroup', true);
+  group.addTask({
+    'func': 'inviteQuestTask',
+    'args': {'questKey': questKey},
+  });
+  group.addTask({
+    'func': 'incrementQuestIndexTask',
+    'args': {},
+  });
+  group.setOnError({
+    'func': 'reportErrorTask',
+    'args': {'error_message': 'Failed to invite quest: '}
+  });
+  return group.run();
+}
+
+function inviteQuestTask(args, state) {
+  checkRateLimit(state);
   const params = {
     'method' : 'post', 
     'headers' : HEADERS,
     'muteHttpExceptions' : true,
   }
-  
-  const api = 'groups/party/quests/invite/' + questKey;
+  const api = 'groups/party/quests/invite/' + args.questKey;
   const response = habiticaApi(api, params);
+  checkResponseRateLimit(response, state);
   if (!response.success) {
-    reportFailure('Unable to invite quest: ' + response.error);
-    return;
+    Logger.log(JSON.stringify(response));
+    throw new Error('Unable to invite quest: ' + response.error);
   }
-  return response.success;
 }
 
+function incrementQuestIndexTask(args, state) {
+  let questIndex = Number(scriptProperties.getProperty('questIndex'));
+  questIndex += 1;
+  scriptProperties.setProperty('questIndex', String(questIndex));
+}
 
 function fetchUserToStateTask(args, state) {
   checkRateLimit(state);
@@ -1501,8 +1540,8 @@ function createWebhooks(deleteWebhooks) {
       'label': SCRIPT_NAME + ': questActivity Webhook',
       'options': {
         'questStarted': true,
-        'questFinished': false,
-        'questInvited': false,
+        'questFinished': true,
+        'questInvited': true,
       },
       'webhookType': 'questActivity',
       'enabled': true,
@@ -1537,10 +1576,16 @@ function doPost(e) {
   }
   if (webhookType == 'questActivity') {
     tryDeferredSpamCast();
-    if (data.type == 'questFinished') {
+    if (isTrue(ENABLE_QUEST_AUTO_INVITE) && data.type == 'questFinished') {
       if (data.quest.questOwner ==
           '590aaa0b-b667-4e94-870c-f74fe403d44a' /*Jay*/) {
         inviteNextQuest();
+      }
+    }
+    if (isTrue(ENABLE_QUEST_AUTO_ACCEPT) && data.type == 'questInvited') {
+      const response = acceptQuest();
+      if (!response.success) {
+        reportFailure('Unable to accept quest: ' + response.error);
       }
     }
   }
