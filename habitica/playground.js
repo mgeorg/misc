@@ -1215,21 +1215,19 @@ function runCreateWebhookTaskGroup(deleteTriggers, options_list) {
 function findWebhookTask(args, state) {
   checkRateLimit(state);
   state.webhookId = null;
-  // Fetch the current webhooks to see if we already
-  // created one.
-  const response = habiticaApi(
-    'user/webhook',
-    {
+  // Fetch the current webhooks to see if we already created one.
+  const api = 'user/webhook';
+  const params = {
       'method' : 'get',
       'headers' : HEADERS,
       'muteHttpExceptions' : true,
-    });
+  };
+  const response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     throw new Error('Unable to fetch webhooks: ' + response.error);
   }
-  // Search through existing webhooks to see if any match
-  // our label.
+  // Search through existing webhooks to see if any match our label.
   for (let i in response.data) {
     let webhook = response.data[i];
     if (webhook.label == args.label) {
@@ -1298,19 +1296,18 @@ function findWebhooksWithPrefixTask(args, state) {
   state.webhookIds = null;
   // Fetch the current webhooks to see if we already
   // created one.
-  const response = habiticaApi(
-    'user/webhook',
-    {
+  const api = 'user/webhook';
+  const params = {
       'method' : 'get',
       'headers' : HEADERS,
       'muteHttpExceptions' : true,
-    });
+  };
+  const response = habiticaApi(api, params);
   checkResponseRateLimit(response, state);
   if (isFalse(response.success)) {
     throw new Error('Unable to fetch webhooks: ' + response.error);
   }
-  // Search through existing webhooks to see if any match
-  // our label.
+  // Search through existing webhooks to see if any match our label.
   for (let i in response.data) {
     let webhook = response.data[i];
     if (webhook.label.startsWith(args.labelPrefix)) {
@@ -1557,7 +1554,7 @@ function findFunctionTrigger(functionName) {
   // Return the first trigger which will call functionName.
   const triggers = ScriptApp.getProjectTriggers();
 
-  for (var i in triggers) {
+  for (let i in triggers) {
     if (triggers[i].getHandlerFunction() == functionName) {
       return triggers[i];
     }
@@ -1570,7 +1567,7 @@ function deleteFunctionTriggers(functionName) {
   // of triggers
   const triggers = ScriptApp.getProjectTriggers();
 
-  for (var i in triggers) {
+  for (let i in triggers) {
     if (triggers[i].getHandlerFunction() == functionName) {
       ScriptApp.deleteTrigger(triggers[i]);
     }
@@ -1579,7 +1576,7 @@ function deleteFunctionTriggers(functionName) {
 
 function deleteAllTriggers() {
   const triggers = ScriptApp.getProjectTriggers();
-  for (var i in triggers) {
+  for (let i in triggers) {
     ScriptApp.deleteTrigger(triggers[i]);
   }
 }
@@ -1592,9 +1589,9 @@ function getMember() {
   };
   
   const api = 'members/' + USER_ID;
-  var response = habiticaApi(api, params);
-  var explore = response.data;
-  for (var key in explore) {
+  const response = habiticaApi(api, params);
+  let explore = response.data;
+  for (let key in explore) {
     Logger.log(key +': ' + JSON.stringify(explore[key]));
   }
   return null;
@@ -1606,11 +1603,11 @@ function getUser() {
     'headers' : HEADERS,
     'muteHttpExceptions' : true,
   }
-  var api = 'user';
+  const api = 'user';
 
   const response = habiticaApi(api, params);
-  var explore = response.data;
-  for (var key in explore) {
+  let explore = response.data;
+  for (let key in explore) {
     Logger.log(key +': ' + JSON.stringify(explore[key]));
   }
   return null;
@@ -1622,18 +1619,20 @@ function getParty() {
     'headers' : HEADERS,
     'muteHttpExceptions' : true,
   }
-  var api = 'groups/party/members?includeAllPublicFields=true&includeTasks=false';
+  const api =
+      'groups/party/members?includeAllPublicFields=true&includeTasks=false';
 
   const response = habiticaApi(api, params);
-  var rsvp = {};
-  for (var i in response.data) {
-    rsvp[response.data[i].profile.name] = response.data[i].party.quest.RSVPNeeded;
-    var explore = response.data[i].party.quest;
-    for (var key in explore) {
+  const rsvp = {};
+  for (let i in response.data) {
+    rsvp[response.data[i].profile.name] =
+        response.data[i].party.quest.RSVPNeeded;
+    let explore = response.data[i].party.quest;
+    for (let key in explore) {
       Logger.log(i + ' ' + key +': ' + JSON.stringify(explore[key]));
     }
   }
-  for (var name in rsvp) {
+  for (let name in rsvp) {
     Logger.log('member ' + name + ' RSVPNeeded=' + rsvp[name]);
   }
   return null;
@@ -1645,15 +1644,16 @@ function getRSVPNeeded() {
     'headers' : HEADERS,
     'muteHttpExceptions' : true,
   }
-  var api = 'groups/party/members?includeAllPublicFields=true&includeTasks=false';
+  const api =
+      'groups/party/members?includeAllPublicFields=true&includeTasks=false';
 
   const response = habiticaApi(api, params);
   if (!response.success) {
     reportError('Unable to fetch party member information: ' + response.error);
     return;
   }
-  var RSVPNeeded = {};
-  for (var i in response.data) {
+  let RSVPNeeded = {};
+  for (let i in response.data) {
     rsvp[response.data[i].id] = response.data[i].party.quest.RSVPNeeded;
   }
   Logger.log(RSVPNeeded);
@@ -1681,7 +1681,8 @@ function logToProperty(property, obj) {
     log = JSON.parse(logString);
   }
   log.unshift({'time': new Date(), 'obj': obj});
-  scriptProperties.setProperty(LOG_PROPERTY_PREFIX + property, JSON.stringify(log));
+  scriptProperties.setProperty(
+      LOG_PROPERTY_PREFIX + property, JSON.stringify(log));
 }
 
 function testReportError() {
@@ -1695,7 +1696,8 @@ function printLogs() {
     if (key.startsWith(LOG_PROPERTY_PREFIX)) {
       let log = JSON.parse(props[key]);
       for (let i in log) {
-        Logger.log(key + ' (' + log[i].time + '): ' + JSON.stringify(log[i].obj));
+        Logger.log(
+            key + ' (' + log[i].time + '): ' + JSON.stringify(log[i].obj));
       }
     }
   }
@@ -1719,12 +1721,13 @@ function parseResponse(response) {
       'headers': {}
     };
   }
-  var code = response.getResponseCode();
-  var parsed = JSON.parse(response);
+  let code = response.getResponseCode();
+  let parsed = JSON.parse(response);
   if (code < 200 || code >= 300) {
     return {
       'success': false,
-      'error': 'response code (' + String(code) + ') received (' + parsed.error + '): ' + parsed.message,
+      'error': 'response code (' + String(code) + ') received (' +
+               parsed.error + '): ' + parsed.message,
       'code': code,
       'headers': response.getAllHeaders()
     };
@@ -1770,7 +1773,7 @@ function checkResponseRateLimit(response, state) {
     }
     if (value1 != undefined && value2 != undefined) {
       Logger.log('found rate limit parameters of ' + state.rateLimitRemaining +
-                ' and reset at ' + state.rateLimitReset);
+                 ' and reset at ' + state.rateLimitReset);
     }
   }
   if(response.code == 429) {
@@ -1784,7 +1787,7 @@ function checkResponseRateLimit(response, state) {
 function checkStartQuest() {
   // TODO use getParty and getRSVPNeeded functions instead of these other things
   // use a TaskGroup maybe and make sure error handling is done right.
-  var questMembers = getQuestMembers();
+  let questMembers = getQuestMembers();
   if (questMembers == null) {
     Logger.log('Quest is not waiting to start (by you).');
     clearCountdown();
@@ -1793,11 +1796,12 @@ function checkStartQuest() {
   if (countdownFinished()) {
     Logger.log('Quest has been waiting too long, starting.');
     startQuest();
+    clearCountdown();
     return;
   }
-  ensureCountdownStarted();  // Make sure it's the same quest
-  var memberInfo = getMemberInfo();
-  for (var member in memberInfo) {
+  ensureCountdownStarted();
+  let memberInfo = getMemberInfo();
+  for (let member in memberInfo) {
     if (memberInfo[member].active && memberInfo[member].RSVPNeeded) {
       Logger.log(member + ' has not accepted and is active, not starting.');
       return;
@@ -1806,7 +1810,7 @@ function checkStartQuest() {
   // All active members have accepted.
   Logger.log('all active members have accepted, starting.');
   startQuest();
-  return;
+  clearCountdown();
 }
 
 function getQuestMembers() {
@@ -1819,12 +1823,12 @@ function getQuestMembers() {
   };
   
   const api = 'groups/party';
-  var response = habiticaApi(api, params);
+  const response = habiticaApi(api, params);
   if (!response.success) {
     reportFailure('Unable to fetch party info: ' + response.error);
     return null;
   }
-  var data = response.data;
+  let data = response.data;
   if (START_ONLY_MY_QUESTS && data.quest.leader != USER_ID) {
     return null;
   }
@@ -1845,15 +1849,18 @@ function getMemberInfo() {
       'groups/party/members?includeAllPublicFields=true&includeTasks=false';
   const response = habiticaApi(api, params);
   if (!response.success) {
-    reportFailure('Unable to fetch party member information: ' + response.error);
+    reportFailure(
+        'Unable to fetch party member information: ' + response.error);
     return;
   }
-  var data = response.data;
-  var now = (new Date()).getTime();
-  var memberInfo = {};
-  for (var i in data) {
-    var active = false;
-    if ((now - new Date(data[i].auth.timestamps.updated).getTime()) / MILLIS_IN_DAY < NUM_DAYS_UNTIL_INACTIVE) {
+  let data = response.data;
+  let now = (new Date()).getTime();
+  let memberInfo = {};
+  for (let i in data) {
+    let active = false;
+    let timeSinceUpdated =
+        now - new Date(data[i].auth.timestamps.updated).getTime();
+    if (timeSinceUpdated / MILLIS_IN_DAY < NUM_DAYS_UNTIL_INACTIVE) {
       active = true;
     } else {
       active = false;
@@ -1879,7 +1886,6 @@ function startQuest() {
   }
   const api = 'groups/party/quests/force-start';
   const response = habiticaApi(api, params);
-  clearCountdown();
   return response;
 }
 
