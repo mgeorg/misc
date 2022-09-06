@@ -74,7 +74,7 @@ const SKILL_MULTI_CAST_STRING = 'Smash Rage';
 // [Users] Do not edit code below this line
 // ==========================================
 const AUTHOR_ID = '074e86a5-a37e-4f73-8826-461f7514ac70';
-const SCRIPT_NAME = 'UserMultiScript';
+const SCRIPT_NAME = 'SuperScript';
 const HEADERS = {
   'x-client' : AUTHOR_ID + '-' + SCRIPT_NAME,
   'x-api-user' : USER_ID,
@@ -138,7 +138,8 @@ function doSetup() {
   deleteAllPropertiesWithPrefix(TASK_GROUP_PROPERTY_PREFIX);
   deleteAllPropertiesWithPrefix(LOCK_PROPERTY_PREFIX);
   createWebhooks(true);
-  deleteTriggers('checkStartQuest');
+  deleteFunctionTriggers('checkStartQuest');
+  // deleteAllTriggers();
   if (ENABLE_AUTO_START_QUEST) {
     ScriptApp.newTrigger(
         'checkStartQuest').timeBased().everyMinutes(15).create();
@@ -841,7 +842,7 @@ function fetchUserToStateTask(args, state) {
   const api = 'user';
 
   if (isTrue(args.userFields)) {
-    url += '?userFields=' + args.userFields;
+    api += '?userFields=' + args.userFields;
   }
 
   const response = habiticaApi(api, params);
@@ -1181,9 +1182,9 @@ function logWebhooks() {
   return group.run();
 }
 
-function runCreateWebhookTaskGroup(deleteTriggers, options_list) {
+function runCreateWebhookTaskGroup(deleteWebhooks, options_list) {
   let group = new TaskGroup('createWebhookTaskGroup', true);
-  if (isTrue(deleteTriggers)) {
+  if (isTrue(deleteWebhooks)) {
     group.addTask({
       'func': 'findWebhooksWithPrefixTask',
       'args': {'labelPrefix': SCRIPT_NAME + ':'},
@@ -1197,7 +1198,8 @@ function runCreateWebhookTaskGroup(deleteTriggers, options_list) {
     'func': 'findWebhooksWithPrefixTask',
     'args': {'labelPrefix': ''},
   });
-  for (let options of options_list) {
+  for (let options of optionsList) {
+    Logger.log(JSON.stringify(options));
     group.addTask({
       'func': 'createWebhookTask',
       'args': {
@@ -1209,7 +1211,7 @@ function runCreateWebhookTaskGroup(deleteTriggers, options_list) {
   }
   group.setOnError({
     'func': 'reportErrorTask',
-    'args': {'error_message': 'Failed to create webhook: '}
+    'args': {'error_message': 'Failed to setup webhook: '}
   });
   return group.run();
 }
@@ -1255,7 +1257,7 @@ function createWebhookTask(args, state) {
 
   if (isTrue(state.webhookId)) {
     Logger.log('modify existing webhook with id ' + state.webhookId);
-    url = url + '/' + state.webhookId;
+    api = api + '/' + state.webhookId;
     method = 'put';
   } else {
     Logger.log('create new webhook.');
@@ -1334,7 +1336,7 @@ function deleteWebhookTask(args, state) {
       'headers' : HEADERS,
       'muteHttpExceptions' : true,
     }
-    let url = origApi + '/' + webhookId;
+    let api = origApi + '/' + webhookId;
     let response = habiticaApi(api, params);
     checkResponseRateLimit(response, state);
     if (isFalse(response.success)) {
@@ -1420,8 +1422,8 @@ function deleteMessagesTask(args, state) {
       'headers' : HEADERS,
       'muteHttpExceptions' : true,
     }
-    let url = origApi + '/' + state.messages[0].id;
-    Logger.log('deleting message: ' + url);
+    let api = origApi + '/' + state.messages[0].id;
+    Logger.log('deleting message: ' + api);
     let response = habiticaApi(api, params);
     checkResponseRateLimit(response, state);
     if (isFalse(response.success)) {
@@ -1492,7 +1494,7 @@ function exploreStateTask(args, state) {
   }
 }
 
-function createWebhooks(deleteTriggers) {
+function createWebhooks(deleteWebhooks) {
   options_list = [
     {
       'label': SCRIPT_NAME + ': questActivity Webhook',
@@ -1513,7 +1515,7 @@ function createWebhooks(deleteTriggers) {
       'enabled': true,
     },
   ];
-  runCreateWebhookTaskGroup(deleteTriggers, options_list);
+  runCreateWebhookTaskGroup(deleteWebhooks, options_list);
 }
 
 function doPost(e) {
@@ -1703,8 +1705,9 @@ function deleteLogs() {
 }
 
 function habiticaApi(api, params) {
-  return parseResponse(UrlFetchApp.fetch(
-      'https://habitica.com/api/v3/' + api, params));
+  const url = 'https://habitica.com/api/v3/' + api;
+  Logger.log(url);
+  return parseResponse(UrlFetchApp.fetch(url, params));
 }
 
 function parseResponse(response) {
