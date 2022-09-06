@@ -65,8 +65,9 @@ const NUM_DAYS_UNTIL_INACTIVE = 3.0;
 const NUM_HOURS_UNTIL_FORCE_START = 24.0;
 
 // SpellSpammer:
+const ENABLE_SKILL_MULTI_CAST = false;
 // TODO change variable names to be generic.
-const FIREBALL_STRING = 'Smash Rage';
+const SKILL_MULTI_CAST_STRING = 'Smash Rage';
 // TODO create string for skill key.
 
 // ==========================================
@@ -476,6 +477,7 @@ function runSpamCastTaskGroup(numCast, runningDeferred) {
   //  'func': 'exploreStateTask',
   //  'args': {'explore': 'fetched.party'},
   //});
+  // TODO allow different skills and targets (and auto-acquire target).
   group.addTask({
     'func': 'spamCastOrDeferTask',
     'args': {
@@ -1523,16 +1525,9 @@ function doPost(e) {
     const taskText = data.task.text;
     const taskNotes = data.task.notes;
     
-    if (data.type == 'scored') {
-      createKeyNames(taskNotes);
-
-      if (taskText == SAVE_STRING) {
-        doSaveButtonActions(taskNotes);
-      }
-      else if (taskText == LOAD_STRING) {
-        doLoadButtonActions(taskNotes);
-      } else if (taskText == FIREBALL_STRING) {
-        logToProperty('doPost', 'running spam cast');
+    if (ENABLE_SKILL_MULTI_CAST && data.type == 'scored') {
+      if (taskText == SKILL_MULTI_CAST_STRING) {
+        logToProperty('doPost', 'running skill multi-cast');
         runSpamCastTaskGroup(Number(taskNotes), false);
       }
     }
