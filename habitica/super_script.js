@@ -214,6 +214,7 @@ function restartQueue_acceptQuestTaskGroup() {
   return restartQueue('acceptQuestTaskGroup');
 }
 
+// TODO remove references to "spam".
 function restartQueue_spamCastTaskGroup() {
   return restartQueue('spamCastTaskGroup');
 }
@@ -488,7 +489,7 @@ function runSpamCastTaskGroup(numCast, runningDeferred) {
       'deferAtFront': isTrue(runningDeferred),
     },
   });
-  group.state.sendDeferMessage = isFalse(runningDeferred);
+  group.queue.state.sendDeferMessage = isFalse(runningDeferred);
   group.setOnError({
     'func': 'reportErrorTask',
     'args': {'error_message': ''}
@@ -1131,11 +1132,11 @@ function runPrivateMessageTaskGroup(message, toUserId, state) {
     'args': {'message': message, 'toUserId': toUserId},
     });
   if (isTrue(state) && state.rateLimitRemaining != undefined) {
-    if (isFalse(group.state)) {
-      group.state = {};
+    if (isFalse(group.queue.state)) {
+      group.queue.state = {};
     }
-    group.state.rateLimitRemaining = state.rateLimitRemaining;
-    group.state.rateLimitReset = state.rateLimitReset;
+    group.queue.state.rateLimitRemaining = state.rateLimitRemaining;
+    group.queue.state.rateLimitReset = state.rateLimitReset;
   }
   group.saveQueue();  // Save queue in case it's paused.
   return group.run();
@@ -1182,7 +1183,7 @@ function logWebhooks() {
   return group.run();
 }
 
-function runCreateWebhookTaskGroup(deleteWebhooks, options_list) {
+function runCreateWebhookTaskGroup(deleteWebhooks, optionsList) {
   let group = new TaskGroup('createWebhookTaskGroup', true);
   if (isTrue(deleteWebhooks)) {
     group.addTask({
