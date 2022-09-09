@@ -26,6 +26,7 @@ function reportError(message, state) {
 }
 
 function logToProperty(property, obj) {
+  // TODO Put a limit on how many logs are kept.
   Logger.log(LOG_PROPERTY_PREFIX + property + ': ' + JSON.stringify(obj));
   let scriptProperties = PropertiesService.getScriptProperties();
   let logString = scriptProperties.getProperty(LOG_PROPERTY_PREFIX + property);
@@ -42,23 +43,11 @@ function testReportError() {
   reportError({'a': 'blah \'this\' is a test.', 'b': 10})
 }
 
-function printLogs() {
-  let scriptProperties = PropertiesService.getScriptProperties();
-  let props = scriptProperties.getProperties();
-  for (let key in props) {
-    if (key.startsWith(LOG_PROPERTY_PREFIX)) {
-      let log = JSON.parse(props[key]);
-      for (let i in log) {
-        Logger.log(
-            key + ' (' + log[i].time + '): ' + JSON.stringify(log[i].obj));
-      }
-    }
-  }
-}
-
 function habiticaApi(api, params) {
   const url = 'https://habitica.com/api/v3/' + api;
-  Logger.log(url);
+  if (isTrue(DEBUG_LOG_API_CALLS)) {
+    Logger.log(url);
+  }
   return parseResponse(UrlFetchApp.fetch(url, params));
 }
 
@@ -72,6 +61,9 @@ function parseResponse(response) {
     };
   }
   let code = response.getResponseCode();
+  if (isTrue(DEBUG_LOG_RESPONSE)) {
+    Logger.log(response);
+  }
   let parsed = JSON.parse(response);
   if (code < 200 || code >= 300) {
     return {
@@ -81,9 +73,6 @@ function parseResponse(response) {
       'code': code,
       'headers': response.getAllHeaders()
     };
-  }
-  if (isTrue(DEBUG_LOG_REQUESTS)) {
-    Logger.log(JSON.stringify(parsed));
   }
   if (isFalse(parsed.success)) {
     return {
@@ -141,10 +130,6 @@ function deleteAllPropertiesWithPrefix(prefix) {
       scriptProperties.deleteProperty(key);
     }
   }
-}
-
-function deleteLogs() {
-  return deleteAllPropertiesWithPrefix(LOG_PROPERTY_PREFIX);
 }
 
 function logErrorTask(args, state, error) {

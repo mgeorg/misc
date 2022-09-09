@@ -18,8 +18,9 @@ const SAVE_COSTUME_PROPERTY_PREFIX = 'CostumeSave_';
 const TASK_GROUP_PROPERTY_PREFIX = 'TaskGroup_';
 
 const DEBUG_DISABLE_TRIGGERS = false;
-const DEBUG_LOG_REQUESTS = false;
+const DEBUG_LOG_RESPONSE = false;
 const DEBUG_MESSAGE_INSTEAD_OF_START_QUEST = false;
+const DEBUG_LOG_API_CALLS = false;
 
 const COSTUME_VARIABLES = [
   'items.currentMount',

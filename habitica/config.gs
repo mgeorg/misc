@@ -50,3 +50,4 @@ const SKILL_MULTI_CAST_STRING = 'Smash Rage';
 
 // TODO add auto cast at certain times.
 
+// TODO Add a version update available check.

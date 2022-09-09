@@ -34,7 +34,6 @@ function doPost(e) {
     }
   }
   if (webhookType == 'questActivity') {
-    tryDeferredSpamCast();
     if (isTrue(ENABLE_QUEST_AUTO_INVITE) && data.type == 'questFinished') {
       if (data.quest.questOwner ==
           '590aaa0b-b667-4e94-870c-f74fe403d44a' /*Jay*/) {
@@ -46,6 +45,9 @@ function doPost(e) {
       if (!response.success) {
         reportFailure('Unable to accept quest: ' + response.error);
       }
+    }
+    if (data.type == 'questStarted') {
+      tryDeferredSpamCast();
     }
   }
 
