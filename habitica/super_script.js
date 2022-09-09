@@ -98,8 +98,9 @@ const SKILL_MULTI_CAST_STRING = 'Smash Rage';
 // ==========================================
 const AUTHOR_ID = '074e86a5-a37e-4f73-8826-461f7514ac70';
 const SCRIPT_NAME = 'SuperScript';
+const SCRIPT_VERSION = 'v0.1';
 const HEADERS = {
-  'x-client' : AUTHOR_ID + '-' + SCRIPT_NAME,
+  'x-client' : AUTHOR_ID + '-' + SCRIPT_NAME + '-' + SCRIPT_VERSION,
   'x-api-user' : USER_ID,
   'x-api-key' : API_TOKEN,
 }
@@ -160,6 +161,18 @@ function doSetup() {
         'runAcceptQuestTaskGroup').timeBased().everyHours(1).create();
   }
   resetQuestIndex();
+}
+
+function logCurrentQuestIndex() {
+  let scriptProperties = PropertiesService.getScriptProperties();
+  let questIndex = scriptProperties.getProperty('questIndex');
+  if (questIndex == null) {
+    questIndex = 0;
+  } else {
+    questIndex = Number(questIndex);
+  }
+  let quest = questQueue[questIndex];
+  Logger.log('next quest: "' + quest + '" (index ' + questIndex + ')');
 }
 
 function resetQuestIndex() {
