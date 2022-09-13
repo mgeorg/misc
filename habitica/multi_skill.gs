@@ -4,27 +4,47 @@ function deleteDeferCastQueue() {
   deleteFunctionTriggers('tryDeferredSpamCast');
 }
 
-function runSpamCastTaskGroup(numCast, runningDeferred) {
+function runSpamCastTaskGroup(notes) {
+  let group = new TaskGroup('spamCastTaskGroup', true);
+  group.addTask({
+    'func': 'parseNotesOptionsTask',
+    'args': {'notes': notes},
+  });
+  group.addTask({
+    'func': 'fetchPartyToStateTask',
+    'args': {},
+  });
+  group.addTask({
+    'func': 'spamCastOrDeferTask',
+    'args': {
+      'skillId': 'smash',  // fireball
+      'times': 10,
+      'targetId': '40ae2ea3-e737-4354-ad07-6670072bf98a', // Morning Pills
+      'waitForQuest': true,
+      'waitForLoginTime': false,
+    },
+  });
+  group.addTask({
+    'func': 'tryCastDeferredTask',
+    'args': {},
+  });
+  group.setOnError({
+    'func': 'reportErrorTask',
+    'args': {'error_message': ''}
+  });
+  return group.run();
+}
+
+function runDeferredSpamCastTaskGroup(runningAtLoginTime) {
   let group = new TaskGroup('spamCastTaskGroup', true);
   group.addTask({
     'func': 'fetchPartyToStateTask',
     'args': {},
   });
-  //group.addTask({
-  //  'func': 'exploreStateTask',
-  //  'args': {'explore': 'fetched.party'},
-  //});
-  // TODO allow different skills and targets (and auto-acquire target).
   group.addTask({
-    'func': 'spamCastOrDeferTask',
-    'args': {
-      'skillId': 'smash',  // fireball
-      'targetId': '40ae2ea3-e737-4354-ad07-6670072bf98a', // Morning Pills
-      'numCast': numCast,
-      'deferAtFront': isTrue(runningDeferred),
-    },
+    'func': 'tryCastDeferredTask',
+    'args': {'runningAtLoginTime': runningAtLoginTime},
   });
-  group.queue.state.sendDeferMessage = isFalse(runningDeferred);
   group.setOnError({
     'func': 'reportErrorTask',
     'args': {'error_message': ''}
@@ -34,34 +54,58 @@ function runSpamCastTaskGroup(numCast, runningDeferred) {
 
 function spamCastOrDeferTask(args, state) {
   let quest = state.fetched.party.quest;
-  if (quest.active) {
-    spamCastTask(args, state);
-  } else {
+  options = {
+    'skillId': args.skillId,
+    'times': Number(args.times),
+    'targetId': args.targetId,
+    'waitForQuest': isTrueString(args.waitForQuest),
+    'waitForLoginTime': isTrueString(args.waitForLoginTime),
+  };
+  if (isTrue(state.notesOptions)) {
+    options.skillId = lowerKeyLookupOrDefault(
+        'skill', state.notesOptions, options.skillId);
+    // TODO Add skill name lookup.
+
+    options.times = lowerKeyLookupOrDefault(
+        'times', state.notesOptions, options.times);
+    // TODO Add "max" as an option.
+    if (!isNumber(options.times)) {
+      options.times = Number(options.times);
+    }
+
+    options.targetId = lowerKeyLookupOrDefault(
+        'target', state.notesOptions, options.targetId);
+    // TODO Add target task name lookup.
+
+    options.waitForQuest = isTrueString(lowerKeyLookupOrDefault(
+        'waitForQuest', state.notesOptions, options.waitForQuest));
+    options.waitForLoginTime = isTrueString(lowerKeyLookupOrDefault(
+        'waitForLoginTime', state.notesOptions, options.waitForLoginTime));
+  }
+  logToProperty('notesOptions', state.notesOptions);
+  logToProperty('options', options);
+
+  if ((options.waitForQuest && isFalse(quest.active)) ||
+      (options.waitForLoginTime && isFalse(args.runningAtLoginTime))) {
+    // Defer the casting.
     let scriptProperties = PropertiesService.getScriptProperties();
-    scriptProperties.setProperty('deferOccurred', 'true');
-    let deferString = scriptProperties.getProperty('deferSpamCast');
-    let defer = {'skillId': args.skillId, 'targetId': args.targetId, 'numCast': args.numCast};
     let deferList = [];
+    let deferString = scriptProperties.getProperty('deferSpamCast');
     if (isTrue(deferString)) {
       deferList = JSON.parse(deferString);
     }
-    if (isTrue(args.deferAtFront)) {
-      deferList.unshift(defer);
-    } else {
-      deferList.push(defer);
-    }
+    deferList.push(options);
     scriptProperties.setProperty('deferSpamCast', JSON.stringify(deferList));
     logToProperty('spamCast', 'creating trigger for tryDeferredSpamCast');
     deleteFunctionTriggers('tryDeferredSpamCast');
     ScriptApp.newTrigger('tryDeferredSpamCast'
         ).timeBased().after(1000 * 60 * 15).create();
-    if (isTrue(state.sendDeferMessage)) {
-      privateMessage(
-        SCRIPT_NAME + ': Deferring casting of spell ' + args.skillId + ' ' +
-        args.numCast + ' times until quest is started.',
-        USER_ID,
+    selfMessage(
+        SCRIPT_NAME + ': Deferring using skill ' + options.skillId + ' ' +
+        options.times + ' times.',
         state);
-    }
+  } else {
+    spamCastTask({'castOptions': options}, state);
   }
 }
 
@@ -71,9 +115,9 @@ function spamCastTask(args, state) {
     startFrom = state.startFrom;
   }
   let i = null;
-  for (i = startFrom; i < args.numCast; ++i) {
+  for (i = startFrom; i < args.castOptions.times; ++i) {
     const api = 'user/class/cast/' +
-        args.skillId + '?targetId=' + args.targetId;
+        args.castOptions.skillId + '?targetId=' + args.castOptions.targetId;
     const params = {
       'method' : 'post',
       'headers' : HEADERS,
@@ -83,49 +127,66 @@ function spamCastTask(args, state) {
     checkResponseRateLimit(response, state);
     Logger.log(JSON.stringify(response));
     if (response.code == 400) {
-      privateMessage(
-        SCRIPT_NAME + ': Out of Mana!  Cannot continue casting.  Cast ' +
-        args.skillId + ' ' + i + ' of ' + args.numCast +
-        ' times.', USER_ID, state);
+      selfMessage(
+        SCRIPT_NAME + ': Out of Mana!  Used skill ' +
+        args.castOptions.skillId + ' ' + i + ' of ' + args.castOptions.times +
+        ' times.', state);
       break;
     }
     if (!response.success) {
-      throw new Error('Unable to cast spell: ' + response.error);
+      throw new Error('Unable to use skill: ' + response.error);
     }
     state.startFrom = i + 1;
   }
-  if (i == args.numCast) {
-    privateMessage(
-        SCRIPT_NAME + ': Cast ' + args.skillId + ' ' +
-        args.numCast + ' times.', USER_ID, state);
+  if (i == args.castOptions.times) {
+    selfMessage(
+        SCRIPT_NAME + ': used skill ' + args.castOptions.skillId + ' ' +
+        args.castOptions.times + ' times.', state);
   }
 }
 
-function tryDeferredSpamCast() {
+function tryCastDeferredTask(args, state) {
+  let quest = state.fetched.party.quest;
+
   let scriptProperties = PropertiesService.getScriptProperties();
   let deferString = scriptProperties.getProperty('deferSpamCast');
   if (isFalse(deferString)) {
-    Logger.log('Nothing deferred to cast');
+    Logger.log('No deferred skill to use');
     return;
   }
   let deferList = JSON.parse(deferString);
   if (isFalse(deferList)) {
+    scriptProperties.deleteProperty('deferSpamCast');
     return;
   }
-  let finishedRun = true;
-  while(finishedRun && isTrue(deferList)) {
-    let defer = deferList.shift();
-    if (isTrue(deferList)) {
-      scriptProperties.setProperty('deferSpamCast', JSON.stringify(deferList));
+
+  let newDeferList = [];
+
+  let errors = [];
+  for (let options of deferList) {
+    if ((options.waitForQuest && isFalse(quest.active)) ||
+        (options.waitForLoginTime && isFalse(args.runningAtLoginTime))) {
+      newDeferList.push(options);
     } else {
-      scriptProperties.deleteProperty('deferSpamCast');
+      try {
+        spamCastTask({'castOptions': options}, state);
+      } catch(e) {
+        errors.push(e);
+      }
     }
-    scriptProperties.deleteProperty('deferOccurred');
-    // TODO(mgeorg) use skillId and targetId.
-    runSpamCastTaskGroup(defer.numCast, true);
-    let deferOccurred = scriptProperties.getProperty('deferOccurred');
-    finishedRun = isFalse(deferOccurred);
   }
-  scriptProperties.deleteProperty('deferOccurred');
+  if (isTrue(newDeferList)) {
+    scriptProperties.setProperty('deferSpamCast', JSON.stringify(newDeferList));
+  } else {
+    scriptProperties.deleteProperty('deferSpamCast');
+  }
+  if (isTrue(errors)) {
+    throw errors[0];
+  }
+}
+
+function tryDeferredSpamCast() {
+  // TODO Make a version run at login time.
+  runDeferredSpamCastTaskGroup(false);
 }
 

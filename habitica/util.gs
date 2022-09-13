@@ -14,13 +14,35 @@ function isTrue(elem) {
   return !isFalse(elem);
 }
 
+function isTrueString(str) {
+  if (!isString(str)) {
+    return isTrue(str);
+  }
+  str = str.trim().toLowerCase();
+  if (str == '') {
+    return false;
+  }
+  if (/0|f|false|n|no/.exec(str)) {
+    return false;
+  }
+  return true;
+}
+
+function isString(elem) {
+  return elem instanceof String || typeof elem === 'string';
+}
+
+function isNumber(elem) {
+  return elem instanceof Number || typeof elem === 'number';
+}
+
 function reportError(message, state) {
   if (LOG_ON_FAILURE) {
     logToProperty('reportError', message);
   }
   if (MESSAGE_ON_FAILURE) {
     if (isTrue(state)) {
-      privateMessage(SCRIPT_NAME + ' failure: ' + message, USER_ID, state);
+      selfMessage(SCRIPT_NAME + ' failure: ' + message, state);
     }
   }
 }
@@ -132,6 +154,61 @@ function deleteAllPropertiesWithPrefix(prefix) {
   }
 }
 
+function parseNotesOptions(notes) {
+  let output = {};
+  output.parsingFailed = [];
+  lines = notes.split(/\r?\n/);
+  for (let line of lines) {
+    line = line.trim();
+    if (line == '') {
+      continue;
+    }
+    let m = /^([^ =]+)(?: *[=:] *| +)["']?([^'"]+)['"]? *[,;]?$/.exec(line);
+    if (isTrue(m)) {
+      let key = m[1];
+      let value = m[2].trim();
+      output[key] = value;
+    } else {
+      output.parsingFailed.push(line);
+    }
+  }
+  return output;
+}
+
+function lowerKeyLookup(key, obj) {
+  return lowerKeyLookupOrDefault(key, obj, undefined);
+}
+
+function lowerKeyLookupOrDefault(key, obj, fallback) {
+  // Prefer the correctly capitalized key.
+  if (obj[key] !== undefined) {
+    return obj[key];
+  }
+  let lower = key.toLowerCase();
+  for (let k in obj) {
+    if (lower == k.toLowerCase()) {
+      return obj[k];
+    }
+  }
+  return fallback;
+}
+
+function writeNotesOptions(obj) {
+  output = [];
+  for (let key of Object.keys(obj).sort()) {
+    if (key == 'parsingFailed') {
+      continue;
+    }
+    value = obj[key];
+    output.push(key + '="' + value + '"');
+  }
+  return output.join('\n');
+}
+
+function parseNotesOptionsTask(args, state) {
+  state.notesOptions = parseNotesOptions(args.notes);
+}
+
 function logErrorTask(args, state, error) {
   Logger.log(
     'logErrorTask(' +
@@ -156,7 +233,11 @@ function reportErrorTask(args, state, error) {
   if (isTrue(args.error_message)) {
     prefix = args.error_message;
   }
-  reportError(prefix + JSON.stringify(error.message), state);
+  if (isTrue(error.message)) {
+    reportError(prefix + error.message, state);
+  } else {
+    reportError(prefix + 'no message', state);
+  }
 }
 
 function logFinallyTask(args, state) {

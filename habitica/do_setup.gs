@@ -15,13 +15,14 @@ function doSetup() {
         'runAcceptQuestTaskGroup').timeBased().everyHours(1).create();
   }
   resetQuestIndex();
+  // TODO setup trigger for before cron.
 }
 
 function doPost(e) {
+  logToProperty('doPost', e.postData.contents);
   const data = JSON.parse(e.postData.contents);
   const webhookType = data.webhookType;
 
-  logToProperty('doPost', data);
   if (webhookType == 'taskActivity') {
     const taskText = data.task.text;
     const taskNotes = data.task.notes;
@@ -29,7 +30,7 @@ function doPost(e) {
     if (ENABLE_SKILL_MULTI_CAST && data.type == 'scored') {
       if (taskText == SKILL_MULTI_CAST_STRING) {
         logToProperty('doPost', 'running skill multi-cast');
-        runSpamCastTaskGroup(Number(taskNotes), false);
+        runSpamCastTaskGroup(taskNotes);
       }
     }
   }

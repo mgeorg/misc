@@ -31,4 +31,3 @@ function testMessages() {
     privateMessage(SCRIPT_NAME + ': message ' + (i+1), USER_ID);
   }
 }
-
