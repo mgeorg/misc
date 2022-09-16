@@ -2,12 +2,12 @@ function checkStartQuest() {
   // TODO use a TaskGroup maybe and make sure error handling is done right.
   let questMembers = getQuestMembers();
   if (questMembers == null) {
-    Logger.log('Quest is not waiting to start (by you).');
+    logToProperty('questStart', 'Quest is not waiting to start (by you).');
     clearCountdown();
     return;
   }
   if (countdownFinished()) {
-    Logger.log('Quest has been waiting too long, starting.');
+    logToProperty('questStart', 'Quest has been waiting too long, starting.');
     startQuest();
     clearCountdown();
     return;
@@ -16,14 +16,52 @@ function checkStartQuest() {
   let memberInfo = getMemberInfo();
   for (let member in memberInfo) {
     if (memberInfo[member].active && memberInfo[member].RSVPNeeded) {
-      Logger.log(member + ' has not accepted and is active, not starting.');
+      logToProperty(
+          'questStart',
+          member + ' has not accepted and is active, not starting.');
       return;
     }
   }
   // All active members have accepted.
-  Logger.log('all active members have accepted, starting.');
+  logToProperty('questStart', 'all active members have accepted, starting.');
   startQuest();
   clearCountdown();
+}
+
+function ensureCountdownStarted() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  if (scriptProperties.getProperty(QUEST_TIMESTAMP_PROPERTY) == null) {
+    scriptProperties.setProperty(
+        QUEST_TIMESTAMP_PROPERTY, String(new Date().getTime()));
+  }
+}
+
+function countdownFinished() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const countdownString = scriptProperties.getProperty(
+      QUEST_TIMESTAMP_PROPERTY);
+  if (countdownString == null) {
+    return false;
+  }
+  const countdown = Number(countdownString);
+  const now = new Date().getTime();
+  if ((now - countdown) / MILLIS_IN_HOUR >= NUM_HOURS_UNTIL_FORCE_START) {
+    return true;
+  }
+  return false;
+}
+
+function clearCountdown() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  scriptProperties.deleteProperty(QUEST_TIMESTAMP_PROPERTY);
+}
+
+function logCountdown() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const countdownString = scriptProperties.getProperty('quest_timestamp');
+  if (countdownString != null) {
+    Logger.log(new Date(Number(countdownString)));
+  }
 }
 
 function getQuestMembers() {
@@ -89,7 +127,7 @@ function getMemberInfo() {
 
 function startQuest() {
   if (isTrue(DEBUG_MESSAGE_INSTEAD_OF_START_QUEST)) {
-    privateMessage('QuestAutoStart: Would have started quest', USER_ID);
+    selfMessage('QuestAutoStart: Would have started quest');
     return;
   }
   const params = {

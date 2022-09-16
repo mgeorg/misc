@@ -28,6 +28,7 @@ function testLoadCostume() {
 
 function testMessages() {
   for (let i = 0; i < 40; ++i) {
-    privateMessage(SCRIPT_NAME + ': message ' + (i+1), USER_ID);
+    selfMessage(SCRIPT_NAME + ': test message ' + (i+1));
   }
 }
+

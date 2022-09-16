@@ -17,6 +17,10 @@ const LOG_PROPERTY_PREFIX = 'Log_';
 const SAVE_COSTUME_PROPERTY_PREFIX = 'CostumeSave_';
 const TASK_GROUP_PROPERTY_PREFIX = 'TaskGroup_';
 
+const MILLIS_IN_HOUR = 1000 * 60 * 60;
+const MILLIS_IN_DAY = 1000 * 60 * 60 * 24;
+const QUEST_TIMESTAMP_PROPERTY = 'QuestTimestamp';
+
 const DEBUG_DISABLE_TRIGGERS = false;
 const DEBUG_LOG_RESPONSE = false;
 const DEBUG_MESSAGE_INSTEAD_OF_START_QUEST = false;

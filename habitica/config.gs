@@ -29,7 +29,6 @@ const ENABLE_QUEST_AUTO_INVITE = false;
 // Quest list.
 // TODO Move this outside of the script somewhere.
 const questQueue = [
-  'robot',
   'fluorite',
   'stone',
   'blackPearl',

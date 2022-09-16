@@ -105,7 +105,7 @@ function saveCostumeTask(args, state) {
   scriptProperties.setProperty(
     SAVE_COSTUME_PROPERTY_PREFIX + args.saveName,
     JSON.stringify(state.currentCostume));
-  // TODO Add privateMessage()
+  // TODO Add selfMessage()
 }
 
 function loadCostumeMultiTask(args, state) {
