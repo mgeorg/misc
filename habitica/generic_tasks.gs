@@ -5,7 +5,7 @@ function fetchUserToStateTask(args, state) {
     'headers' : HEADERS,
     'muteHttpExceptions' : true,
   }
-  const api = 'user';
+  let api = 'user';
 
   if (isTrue(args.userFields)) {
     api += '?userFields=' + args.userFields;
