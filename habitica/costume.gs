@@ -14,6 +14,11 @@ function runLoadCostumeTaskGroup(saveName) {
       'saveName': saveName,
     },
   });
+  group.setOnError({
+    'func': 'reportErrorTask',
+    'args': {'error_message':
+             'Failed to load Costume from slot "' + saveName + '": '}
+  });
   return group.run();
 }
 
@@ -59,7 +64,8 @@ function runSaveCostumeTaskGroup(saveName) {
   });
   group.setOnError({
     'func': 'throwErrorTask',  // TODO change to reportErrorTask
-    'args': {'error_message': 'Failed to save Costume to slot "' + saveName + '": '}
+    'args': {'error_message':
+             'Failed to save Costume to slot "' + saveName + '": '}
   });
   group.setOnFinally({
     'func': 'unlockTask',
@@ -260,8 +266,11 @@ function findLoadCostumeRewardTask(args, state) {
   if (isFalse(state.fetched)) {
     state.fetched = {};
   }
-  if (isFalse(state.loadCostumeTask)) {
-    state.loadCostumeReward = {};
+  if (isFalse(state.loadCostumeRewardId)) {
+    state.loadCostumeRewardId = {};
+  }
+  if (isFalse(state.loadCostumeRewardIndex)) {
+    state.loadCostumeRewardIndex = {};
   }
   state.fetched.rewards = response.data;
   for (let i in response.data) {

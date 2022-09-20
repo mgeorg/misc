@@ -15,7 +15,12 @@ function doSetup() {
         'runAcceptQuestTaskGroup').timeBased().everyHours(1).create();
   }
   resetQuestIndex();
-  // TODO setup trigger for before cron.
+
+  if (ENABLE_BANK) {
+    ensureBankRewardExists();
+  }
+
+  createLoginTimeTriggerTaskGroup();
 }
 
 function doPost(e) {
@@ -24,13 +29,16 @@ function doPost(e) {
   const webhookType = data.webhookType;
 
   if (webhookType == 'taskActivity') {
-    const taskText = data.task.text;
-    const taskNotes = data.task.notes;
-    
-    if (ENABLE_SKILL_MULTI_CAST && data.type == 'scored') {
-      if (taskText == SKILL_MULTI_CAST_STRING) {
+    if (data.type == 'scored') {
+      if (data.task.text == SKILL_MULTI_CAST_STRING) {
         logToProperty('doPost', 'running skill multi-cast');
-        runSpamCastTaskGroup(taskNotes);
+        runSpamCastTaskGroup(data.task.notes);
+      }
+      if (data.task.type == 'reward') {
+        let m = BANK_REWARD_REGEX.exec(data.task.text);
+        if (isTrue(m)) {
+          scoreBankReward(data.task);
+        }
       }
     }
   }
@@ -53,6 +61,11 @@ function doPost(e) {
   }
 
   return HtmlService.createHtmlOutput();
+}
+
+function doLoginTime() {
+  logToProperty('doLoginTime', 'Running doLoginTime()');
+  tryDeferredSpamCastAtLoginTime();
 }
 
 function createWebhooks(deleteWebhooks) {

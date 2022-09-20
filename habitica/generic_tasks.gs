@@ -44,6 +44,48 @@ function fetchPartyToStateTask(args, state) {
   state.fetched.party = response.data;
 }
 
+function fetchContentToStateTask(args, state) {
+  checkRateLimit(state);
+  const params = {
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
+  }
+  let api = 'content?language=en';
+
+  const response = habiticaApi(api, params);
+  checkResponseRateLimit(response, state);
+  if (!response.success) {
+    Logger.log(JSON.stringify(response));
+    throw new Error('Unable to fetch user: ' + response.error);
+  }
+  if (isFalse(state.fetched)) {
+    state.fetched = {};
+  }
+  state.fetched.content = response.data;
+}
+
+function fetchRewardsToStateTask(args, state) {
+  checkRateLimit(state);
+  const params = {
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
+  }
+  let api = 'tasks/user?type=rewards';
+
+  const response = habiticaApi(api, params);
+  checkResponseRateLimit(response, state);
+  if (!response.success) {
+    Logger.log(JSON.stringify(response));
+    throw new Error('Unable to fetch reward tasks: ' + response.error);
+  }
+  if (isFalse(state.fetched)) {
+    state.fetched = {};
+  }
+  state.fetched.rewards = response.data;
+}
+
 function getMember() {
   const params = {
     'method' : 'get', 

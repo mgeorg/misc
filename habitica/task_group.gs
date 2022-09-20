@@ -233,9 +233,17 @@ function restartQueue_inviteQuestTaskGroup() {
   return restartQueue('inviteQuestTaskGroup');
 }
 
+function restartQueue_questQueueTaskGroup() {
+  return restartQueue('questQueueTaskGroup');
+}
+
 // TODO remove references to "spam".
 function restartQueue_spamCastTaskGroup() {
   return restartQueue('spamCastTaskGroup');
+}
+
+function restartQueue_loginTimeTaskGroup() {
+  return restartQueue('loginTimeTaskGroup');
 }
 
 function restartQueue_privateMessageTaskGroup() {
@@ -252,6 +260,10 @@ function restartQueue_messagesTaskGroup() {
 
 function restartQueue_saveCostumeTaskGroup() {
   return restartQueue('saveCostumeTaskGroup');
+}
+
+function restartQueue_bankTaskGroup() {
+  return restartQueue('bankTaskGroup');
 }
 
 function restartQueue(queueKey) {

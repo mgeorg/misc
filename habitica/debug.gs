@@ -9,13 +9,15 @@ function exploreStateTask(args, state) {
       return;
     }
   }
-  for (let key of Object.keys(explore).sort()) {
-    Logger.log(args.explore + '.' + key + ': ' + JSON.stringify(explore[key]));
+  if (isNumber(explore) || isString(explore)) {
+    Logger.log(args.explore + ': ' + JSON.stringify(explore));
+  } else {
+    for (let key of Object.keys(explore).sort()) {
+      Logger.log(
+          args.explore + '.' + key + ': ' +
+          JSON.stringify(explore[key], null, 2));
+    }
   }
-}
-
-function testSpamCastTaskGroup() {
-  runSpamCastTaskGroup(2, false);
 }
 
 function testSaveCostume() {
@@ -30,5 +32,39 @@ function testMessages() {
   for (let i = 0; i < 40; ++i) {
     selfMessage(SCRIPT_NAME + ': test message ' + (i+1));
   }
+}
+
+function testSpamCastTaskGroup() {
+  runSpamCastTaskGroup('times 2\nwaitforlogintime true');
+}
+
+function testLoginTimeTrigger() {
+  doLoginTime();
+}
+
+function debugUserTaskGroup() {
+  let group = new TaskGroup('spamCastTaskGroup', true);
+  group.addTask({
+    'func': 'fetchUserToStateTask',
+    'args': {'userFields': 'preferences'},
+  });
+  group.addTask({
+    'func': 'exploreStateTask',
+    'args': {'explore': 'fetched.user'},
+  });
+  group.setOnError({
+    'func': 'reportErrorTask',
+    'args': {'error_message': ''}
+  });
+  return group.run();
+}
+
+function logSpamCastQueue() {
+  let scriptProperties = PropertiesService.getScriptProperties();
+  let deferString = scriptProperties.getProperty('deferSpamCast');
+  if (isTrue(deferString)) {
+    deferList = JSON.parse(deferString);
+  }
+  Logger.log(JSON.stringify(deferList, null, 2));
 }
 

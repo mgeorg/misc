@@ -50,7 +50,15 @@ const COSTUME_VARIABLES = [
   // 'preferences.skin',
 ];
 
+// TODO(mgeorg) Add COSTUME to these variables.
 const SAVE_REWARD_REGEX = /^Save appearance "([^"]+)"$/;
 const LOAD_REWARD_REGEX = /^Load appearance "([^"]+)"$/;
 const LOAD_REWARD_FORMAT = 'Load appearance "{0}"';
 
+const BANK_REWARD_REGEX = /^Deposit in Bank$/;
+const BANK_REWARD_STRING = "Deposit in Bank";
+
+const QUEST_INVITE_QUEUE_STRING = SCRIPT_NAME + ': Quest Queue Summary.';
+
+const QUEST_QUEUE_REWARD_REGEX = /^Quest Invite Queue$/;
+const QUEST_QUEUE_REWARD_STRING = "Quest Invite Queue";

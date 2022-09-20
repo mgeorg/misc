@@ -83,10 +83,10 @@ function parseResponse(response) {
     };
   }
   let code = response.getResponseCode();
-  if (isTrue(DEBUG_LOG_RESPONSE)) {
-    Logger.log(response);
-  }
   let parsed = JSON.parse(response);
+  if (isTrue(DEBUG_LOG_RESPONSE)) {
+    Logger.log(JSON.stringify(parsed, null, 2));
+  }
   if (code < 200 || code >= 300) {
     return {
       'success': false,
@@ -193,20 +193,36 @@ function lowerKeyLookupOrDefault(key, obj, fallback) {
   return fallback;
 }
 
-function writeNotesOptions(obj) {
-  output = [];
+function writeNotesOptions(obj, order) {
+  let output = [];
+  let order_keys = null;
+  if (isTrue(order)) {
+    order_keys = new Set(order);
+    for (let key of order) {
+      if (key in obj) {
+        let value = obj[key];
+        output.push(key + '="' + value + '"');
+      }
+    }
+  } else {
+    order_keys = new Set();
+  }
   for (let key of Object.keys(obj).sort()) {
     if (key == 'parsingFailed') {
       continue;
     }
-    value = obj[key];
+    if (order_keys.has(key)) {
+      // Already added to output.
+      continue;
+    }
+    let value = obj[key];
     output.push(key + '="' + value + '"');
   }
-  return output.join('\n');
+  return output.join('\n\n');
 }
 
 function parseNotesOptionsTask(args, state) {
-  state.notesOptions = parseNotesOptions(args.notes);
+  state.notesOptions = parseNotesOptions(args.notes, args.order);
 }
 
 function logErrorTask(args, state, error) {

@@ -50,3 +50,14 @@ const SKILL_MULTI_CAST_STRING = 'Smash Rage';
 // TODO add auto cast at certain times.
 
 // TODO Add a version update available check.
+
+// Bank:
+//   The bank creates a reward which deposits money in the bank.
+// Be careful not to press the reward button too quickly, it takes a
+// little time to update.
+// WARNING: Currently, the only way to get money out of the bank is to
+// subtract it manually from the reward task and then use "fix character
+// values" to add the gold to your account.
+// There is currently no API to modify the hero's GP amount.
+// Negative values are allowed (so you can take out loans).
+const ENABLE_BANK = false;

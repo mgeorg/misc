@@ -30,6 +30,7 @@ def main():
       'quest_start.gs',
       'quest_invite.gs',
       'costume.gs',
+      'bank.gs',
       # Debugging, maybe don't include in releases.
       'task_test.gs',
       'debug.gs',

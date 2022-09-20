@@ -36,6 +36,15 @@ function runSpamCastTaskGroup(notes) {
 }
 
 function runDeferredSpamCastTaskGroup(runningAtLoginTime) {
+  // TODO Don't create a 15min trigger if we're waiting for login time.
+
+  let scriptProperties = PropertiesService.getScriptProperties();
+  let deferString = scriptProperties.getProperty('deferSpamCast');
+  if (isFalse(deferString)) {
+    Logger.log('No deferred skill to use');
+    return;
+  }
+
   let group = new TaskGroup('spamCastTaskGroup', true);
   group.addTask({
     'func': 'fetchPartyToStateTask',
@@ -100,9 +109,17 @@ function spamCastOrDeferTask(args, state) {
     deleteFunctionTriggers('tryDeferredSpamCast');
     ScriptApp.newTrigger('tryDeferredSpamCast'
         ).timeBased().after(1000 * 60 * 15).create();
+    let untilTimeString = '.';
+    if (options.waitForQuest && options.waitForLoginTime) {
+      untilTimeString = ' until your login time and a quest is started.';
+    } else if (options.waitForQuest) {
+      untilTimeString = ' until a quest is started.';
+    } else if (options.waitForLoginTime) {
+      untilTimeString = ' until your login time.';
+    }
     selfMessage(
         SCRIPT_NAME + ': Deferring using skill ' + options.skillId + ' ' +
-        options.times + ' times.',
+        options.times + ' times' + untilTimeString,
         state);
   } else {
     spamCastTask({'castOptions': options}, state);
@@ -186,7 +203,10 @@ function tryCastDeferredTask(args, state) {
 }
 
 function tryDeferredSpamCast() {
-  // TODO Make a version run at login time.
   runDeferredSpamCastTaskGroup(false);
+}
+
+function tryDeferredSpamCastAtLoginTime() {
+  runDeferredSpamCastTaskGroup(true);
 }
 
