@@ -1,18 +1,27 @@
 // Functions that are meant for a user to manually trigger.
 // Possibly for debugging purposes.
 
-function printLogs() {
+function printLogs(numShow) {
   let scriptProperties = PropertiesService.getScriptProperties();
   let props = scriptProperties.getProperties();
-  for (let key in props) {
+  let i = 0;
+  for (let key of Object.keys(props).sort()) {
     if (key.startsWith(LOG_PROPERTY_PREFIX)) {
       let log = JSON.parse(props[key]);
       for (let i in log) {
         Logger.log(
-            key + ' (' + log[i].time + '): ' + JSON.stringify(log[i].obj));
+            key + ' ' + i + ' (' + log[i].time + '): ' +
+            JSON.stringify(log[i].obj));
+        if (isTrue(numShow) && Number(i) >= numShow) {
+          break;
+        }
       }
     }
   }
+}
+
+function printLogs3() {
+  return printLogs(3);
 }
 
 function deleteLogs() {

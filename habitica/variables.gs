@@ -12,6 +12,7 @@ const HEADERS = {
 const GOOGLE_APP_SCRIPT_BASE_THIS = this;
 const TASK_GROUP_MAX_NUM_TRIES = 30;
 
+const LOG_MAX_LENGTH = 20;
 const LOCK_PROPERTY_PREFIX = 'Lock_';
 const LOG_PROPERTY_PREFIX = 'Log_';
 const SAVE_COSTUME_PROPERTY_PREFIX = 'CostumeSave_';

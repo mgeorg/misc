@@ -34,6 +34,11 @@ function testMessages() {
   }
 }
 
+function spamCastNow() {
+  deleteSpamCastQueue();
+  runSpamCastTaskGroup('times 1\nwaitforquest false\nwaitforlogintime false');
+}
+
 function testSpamCastTaskGroup() {
   runSpamCastTaskGroup('times 2\nwaitforlogintime true');
 }
@@ -62,9 +67,15 @@ function debugUserTaskGroup() {
 function logSpamCastQueue() {
   let scriptProperties = PropertiesService.getScriptProperties();
   let deferString = scriptProperties.getProperty('deferSpamCast');
+  let deferList = [];
   if (isTrue(deferString)) {
     deferList = JSON.parse(deferString);
   }
   Logger.log(JSON.stringify(deferList, null, 2));
+}
+
+function deleteSpamCastQueue() {
+  let scriptProperties = PropertiesService.getScriptProperties();
+  scriptProperties.deleteProperty('deferSpamCast');
 }
 

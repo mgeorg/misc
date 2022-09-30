@@ -48,7 +48,6 @@ function reportError(message, state) {
 }
 
 function logToProperty(property, obj) {
-  // TODO Put a limit on how many logs are kept.
   Logger.log(LOG_PROPERTY_PREFIX + property + ': ' + JSON.stringify(obj));
   let scriptProperties = PropertiesService.getScriptProperties();
   let logString = scriptProperties.getProperty(LOG_PROPERTY_PREFIX + property);
@@ -57,6 +56,11 @@ function logToProperty(property, obj) {
     log = JSON.parse(logString);
   }
   log.unshift({'time': new Date(), 'obj': obj});
+  while(log.length > LOG_MAX_LENGTH) {
+    log.pop();
+  }
+  // TODO handle quota exceptions.  And add error checking for other property
+  // setting as well (which have higher priority).
   scriptProperties.setProperty(
       LOG_PROPERTY_PREFIX + property, JSON.stringify(log));
 }
@@ -85,7 +89,19 @@ function parseResponse(response) {
   let code = response.getResponseCode();
   let parsed = JSON.parse(response);
   if (isTrue(DEBUG_LOG_RESPONSE)) {
-    Logger.log(JSON.stringify(parsed, null, 2));
+    let log = JSON.stringify(parsed, null, 2);
+    if (log.length > 8192 && isTrue(parsed.data)) {
+      let copy_data = parsed.data;
+      parsed.data = '...expanded below...';
+      Logger.log(JSON.stringify(parsed, null, 2));
+      parsed.data = copy_data;
+      for (let k in parsed.data) {
+        Logger.log('data.' + k + ': ' +
+                   JSON.stringify(parsed.data[k], null, 2));
+      }
+    } else {
+      Logger.log(log);
+    }
   }
   if (code < 200 || code >= 300) {
     return {

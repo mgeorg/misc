@@ -44,6 +44,9 @@ function doPost(e) {
   }
   if (webhookType == 'questActivity') {
     if (isTrue(ENABLE_QUEST_AUTO_INVITE) && data.type == 'questFinished') {
+      // TODO data.quest.questOwner is not sent for questFinished.
+      // Log it to a property when it is available, or get it some other
+      // way.
       if (data.quest.questOwner ==
           '590aaa0b-b667-4e94-870c-f74fe403d44a' /*Jay*/) {
         inviteNextQuest();

@@ -77,8 +77,9 @@ function spamCastOrDeferTask(args, state) {
 
     options.times = lowerKeyLookupOrDefault(
         'times', state.notesOptions, options.times);
-    // TODO Add "max" as an option.
-    if (!isNumber(options.times)) {
+    if (isString(options.times) && options.times == 'max') {
+      // Nothing.
+    } else if (!isNumber(options.times)) {
       options.times = Number(options.times);
     }
 
@@ -142,7 +143,6 @@ function spamCastTask(args, state) {
     }
     const response = habiticaApi(api, params);
     checkResponseRateLimit(response, state);
-    Logger.log(JSON.stringify(response));
     if (response.code == 400) {
       selfMessage(
         SCRIPT_NAME + ': Out of Mana!  Used skill ' +
