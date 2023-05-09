@@ -28,10 +28,12 @@ function runSpamCastTaskGroup(notes) {
     'func': 'tryCastDeferredTask',
     'args': {},
   });
-  group.setOnError({
-    'func': 'reportErrorTask',
-    'args': {'error_message': ''}
-  });
+  if (isTrue(MULTI_CAST_SEND_MESSAGE_ON_CAST_FAILURE)) {
+    group.setOnError({
+      'func': 'reportErrorTask',
+      'args': {'error_message': ''}
+    });
+  }
   return group.run();
 }
 
@@ -54,10 +56,12 @@ function runDeferredSpamCastTaskGroup(runningAtLoginTime) {
     'func': 'tryCastDeferredTask',
     'args': {'runningAtLoginTime': runningAtLoginTime},
   });
-  group.setOnError({
-    'func': 'reportErrorTask',
-    'args': {'error_message': ''}
-  });
+  if (isTrue(MULTI_CAST_SEND_MESSAGE_ON_CAST_FAILURE)) {
+    group.setOnError({
+      'func': 'reportErrorTask',
+      'args': {'error_message': ''}
+    });
+  }
   return group.run();
 }
 
@@ -118,10 +122,12 @@ function spamCastOrDeferTask(args, state) {
     } else if (options.waitForLoginTime) {
       untilTimeString = ' until your login time.';
     }
-    selfMessage(
-        SCRIPT_NAME + ': Deferring using skill ' + options.skillId + ' ' +
-        options.times + ' times' + untilTimeString,
-        state);
+    if (isTrue(MULTI_CAST_SEND_MESSAGE_ON_DEFER)) {
+      selfMessage(
+          SCRIPT_NAME + ': Deferring using skill ' + options.skillId + ' ' +
+          options.times + ' times' + untilTimeString,
+          state);
+    }
   } else {
     spamCastTask({'castOptions': options}, state);
   }
@@ -144,10 +150,12 @@ function spamCastTask(args, state) {
     const response = habiticaApi(api, params);
     checkResponseRateLimit(response, state);
     if (response.code == 400) {
-      selfMessage(
-        SCRIPT_NAME + ': Out of Mana!  Used skill ' +
-        args.castOptions.skillId + ' ' + i + ' of ' + args.castOptions.times +
-        ' times.', state);
+      if (isTrue(MULTI_CAST_SEND_MESSAGE_ON_CAST_FAILURE)) {
+        selfMessage(
+          SCRIPT_NAME + ': Out of Mana!  Used skill ' +
+          args.castOptions.skillId + ' ' + i + ' of ' + args.castOptions.times +
+          ' times.', state);
+      }
       break;
     }
     if (!response.success) {
@@ -156,9 +164,11 @@ function spamCastTask(args, state) {
     state.startFrom = i + 1;
   }
   if (i == args.castOptions.times) {
-    selfMessage(
-        SCRIPT_NAME + ': used skill ' + args.castOptions.skillId + ' ' +
-        args.castOptions.times + ' times.', state);
+    if (isTrue(MULTI_CAST_SEND_MESSAGE_ON_CAST_SUCCESS)) {
+      selfMessage(
+          SCRIPT_NAME + ': used skill ' + args.castOptions.skillId + ' ' +
+          args.castOptions.times + ' times.', state);
+    }
   }
 }
 

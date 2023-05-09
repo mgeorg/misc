@@ -118,6 +118,37 @@ function findQuestQueueRewardTask(args, state) {
   }
 }
 
+function normalizeUserId(state, id) {
+  let m = USER_ID_REGEX.exec(id);
+  if (isTrue(m)) {
+    return id;
+  }
+  if (state.memberInfoByName == undefined) {
+    getMemberInfoTask({}, state);
+  }
+  if (id in state.memberInfoByName) {
+    return state.memberInfoByName[id].id;
+  }
+  if (id.startsWith('@') && id.slice(1) in state.memberInfoByName) {
+    return state.memberInfoByName[id.slice(1)].id;
+  }
+}
+
+function parseQuestQueueRewardTask(args, state) {
+  findQuestQueueRewardTask(args, state);
+  if (state.questQueueRewardIndex == undefined) {
+    return;
+  }
+  let reward = state.fetched.rewards[state.questQueueRewardIndex];
+  let parsedOptions = parseNotesOptions(reward.notes);
+  if (parsedOptions.after != undefined) {
+    parsedOptions.after = '';
+  }
+  if (parsedOptions.queue != undefined) {
+  }
+  state.questQueueOptions = parsedOptions;
+}
+
 function updateQuestQueueRewardTask(args, state) {
   // TODO Actually have a queue which we parse.
   const payload = {

@@ -45,6 +45,10 @@ const questQueue = [
 const ENABLE_SKILL_MULTI_CAST = false;
 // TODO Enable setting of different tasks.
 const SKILL_MULTI_CAST_STRING = 'Smash Rage';
+// When to send messages pertaining to multi-cast.
+const MULTI_CAST_SEND_MESSAGE_ON_DEFER = true;
+const MULTI_CAST_SEND_MESSAGE_ON_CAST_SUCCESS = true;
+const MULTI_CAST_SEND_MESSAGE_ON_CAST_FAILURE = true;
 // TODO allow choosing of target task (outside of script).
 
 // TODO add auto cast at certain times.

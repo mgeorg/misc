@@ -266,6 +266,10 @@ function restartQueue_bankTaskGroup() {
   return restartQueue('bankTaskGroup');
 }
 
+function restartQueue_startQuestTaskGroup() {
+  return restartQueue('startQuestTaskGroup');
+}
+
 function restartQueue(queueKey) {
   let group = new TaskGroup(queueKey, false);
   return group.resumeRun();

@@ -63,3 +63,7 @@ const QUEST_INVITE_QUEUE_STRING = SCRIPT_NAME + ': Quest Queue Summary.';
 
 const QUEST_QUEUE_REWARD_REGEX = /^Quest Invite Queue$/;
 const QUEST_QUEUE_REWARD_STRING = "Quest Invite Queue";
+
+const USER_ID_REGEX = (
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+

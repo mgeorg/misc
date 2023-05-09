@@ -124,3 +124,79 @@ function getRSVPNeeded() {
   return RSVPNeeded;
 }
 
+function getMemberInfoTask(args, state) {
+  checkRateLimit(state);
+  const params = {
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
+  }
+  const api =
+      'groups/party/members?includeAllPublicFields=true&includeTasks=false';
+
+  const response = habiticaApi(api, params);
+  checkResponseRateLimit(response, state);
+  if (isFalse(response.success)) {
+    throw new Error('Unable to fetch party member information: ' +
+                    response.error);
+  }
+  let memberInfoById = {};
+  let memberInfoByName = {};
+  const now = new Date().getTime();
+  for (let i in response.data) {
+    let member = response.data[i];
+    if (i == 0) {
+      for (key in member) {
+        Logger.log(key + ': ' + JSON.stringify(member[key], null, 2));
+      }
+    }
+    let active = false;
+    let timeSinceUpdated =
+        now - new Date(member.auth.timestamps.updated).getTime();
+    if (timeSinceUpdated / MILLIS_IN_DAY < NUM_DAYS_UNTIL_INACTIVE) {
+      active = true;
+    } else {
+      active = false;
+    }
+    memberInfo = {
+      'id': member.id,
+      'username': member.auth.local.username,
+      'profileName': member.profile.name,  // Lower case this.
+      'active': active,
+      'RSVPNeeded': member.party.quest.RSVPNeeded,
+    }
+    memberInfoById[memberInfo.id] = memberInfo;
+    memberInfoByName[memberInfo.username] = memberInfo;
+  }
+  state.memberInfoById = memberInfoById;
+  state.memberInfoByName = memberInfoByName;
+}
+
+function getQuestMembersTask(args, state) {
+  // If a quest is invited but not started and I might want to start it,
+  // then return the members that are currently on it, otherwise null.
+  checkRateLimit(state);
+  const params = {
+    'method' : 'get',
+    'headers' : HEADERS,
+    'muteHttpExceptions' : true,
+  };
+
+  state.questMembers = null;
+
+  const api = 'groups/party';
+  const response = habiticaApi(api, params);
+  checkResponseRateLimit(response, state);
+  if (isFalse(response.success)) {
+    throw new Error('Unable to fetch party info: ' + response.error);
+  }
+  let data = response.data;
+  if (START_ONLY_MY_QUESTS && data.quest.leader != USER_ID) {
+    return;
+  }
+  if (data.quest.key && !data.quest.active) {
+    state.questMembers = data.quest.members;
+    return;
+  }
+}
+

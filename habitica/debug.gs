@@ -79,3 +79,8 @@ function deleteSpamCastQueue() {
   scriptProperties.deleteProperty('deferSpamCast');
 }
 
+function testGetMemberInfo() {
+  let state = {};
+  getMemberInfoTask({}, state);
+}
+
