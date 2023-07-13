@@ -264,8 +264,9 @@ class PhotosDownloader(object):
 
 
 def main():
-  # down = DriveDownloader('')
+  down = DriveDownloader('')
   # photos = PhotosDownloader()
+  return
   drive_files = list()
   photos_files = list()
   with open('/home/mgeorg/drive_photos/file_list.txt', 'r') as f:
